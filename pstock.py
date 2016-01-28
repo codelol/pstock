@@ -20,7 +20,7 @@ def get_all_history(symbols) :
         }.get(today.weekday(), today)
 
     latest_trading_day = get_latest_trading_day()
-    print 'Lasted trading day:',latest_trading_day.date().isoformat()
+    print 'Lastest trading day:',latest_trading_day.date().isoformat()
 
     history_starting_day = latest_trading_day - timedelta(days = 40)
     history_ending_day = latest_trading_day - timedelta(days = 1)
@@ -47,30 +47,43 @@ def merge_current_and_history_close_prices(symbols, current_prices, history_clos
         merged_prices[sym] = [current_prices[sym]] + history_close_prices[sym]
     return merged_prices
 
+def print_results(symbols, current_prices, history_close_prices, sma5, sma10, sma20) :
+    for sym in symbols :
+        price_change = float(current_prices[sym]) - float(history_close_prices[sym][0])
+        print sym,
+        print current_prices[sym],
+        print str(price_change),
+        print '{0:.2%}'.format(price_change / float(history_close_prices[sym][0])),
+        print str(float(sma5[sym]) - float(sma10[sym])),
+        print str(float(sma5[sym]) - float(sma20[sym]))
+
+
 def main() :
     watchlist = read_watchlist()
     print watchlist
 
     current_prices = get_current_prices(watchlist)
-    print current_prices
+    # print current_prices
 
     full_history = get_all_history(watchlist)
-    print full_history
+    # print full_history
 
     history_close_prices = get_history_close_prices(full_history)
-    print history_close_prices
+    # print history_close_prices
 
     merged_prices = merge_current_and_history_close_prices(watchlist, current_prices, history_close_prices)
-    print merged_prices
+    # print merged_prices
 
     sma5 = cal_simple_moving_average(merged_prices, 5)
-    print sma5
+    # print sma5
 
     sma10 = cal_simple_moving_average(merged_prices, 10)
-    print sma10
+    # print sma10
 
     sma20 = cal_simple_moving_average(merged_prices, 20)
-    print sma20
+    # print sma20
+
+    print_results(watchlist, current_prices, history_close_prices, sma5, sma10, sma20)
 
 if __name__ == '__main__' :
     main()
