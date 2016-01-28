@@ -20,6 +20,7 @@ def get_all_history(symbols) :
         }.get(today.weekday(), today)
 
     latest_trading_day = get_latest_trading_day()
+    print 'Lasted trading day:',latest_trading_day.date().isoformat()
 
     history_starting_day = latest_trading_day - timedelta(days = 40)
     history_ending_day = latest_trading_day - timedelta(days = 1)
@@ -31,11 +32,7 @@ def get_all_history(symbols) :
 def get_history_close_prices(full_history):
     history_close_prices = {}
     for sym in full_history.keys() :
-        info = full_history[sym]
-        prices = []
-        for each_day in info:
-            prices.append(each_day['Close'])
-        history_close_prices[sym] = prices
+        history_close_prices[sym] = [x['Close'] for x in full_history[sym]]
     return history_close_prices
 
 def cal_simple_moving_average(prices, days) :
