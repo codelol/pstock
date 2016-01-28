@@ -1,13 +1,18 @@
 #!/usr/bin/env python
 
 from yahoo_finance import Share
+from googlefinance import getQuotes
 from datetime import datetime, timedelta
 
 def read_watchlist() :
     return [line.strip() for line in open("watchlist.txt", 'r')]
 
 def get_current_prices(symbols) :
-    return {sym : Share(sym).get_price() for sym in symbols }
+    # with Yahoo! API
+    # return {sym : Share(sym).get_price() for sym in symbols }
+
+    # with Google API for no-delay quotes
+    return {sym : getQuotes(sym)[0]['LastTradePrice'] for sym in symbols}
 
 def get_all_history(symbols) :
     def get_latest_trading_day() :
