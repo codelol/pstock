@@ -57,10 +57,10 @@ def print_results(symbols, current_prices, history_close_prices, sma5, sma10, sm
         price_change = float(current_prices[sym]) - float(history_close_prices[sym][0])
         print sym,
         print current_prices[sym],
-        print str(price_change),
+        print '{0:.2}'.format(price_change),
         print '{0:.2%}'.format(price_change / float(history_close_prices[sym][0])),
-        print str(float(sma5[sym]) - float(sma10[sym])),
-        print str(float(sma5[sym]) - float(sma20[sym]))
+        print '{0:.2%}'.format(float(sma5[sym]) - float(sma10[sym])),
+        print '{0:.2%}'.format(float(sma5[sym]) - float(sma20[sym]))
 
 
 def main() :
