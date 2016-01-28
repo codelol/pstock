@@ -21,7 +21,7 @@ def get_all_history(symbols) :
 
     latest_trading_day = get_latest_trading_day()
 
-    history_starting_day = latest_trading_day - timedelta(days = 20)
+    history_starting_day = latest_trading_day - timedelta(days = 40)
     history_ending_day = latest_trading_day - timedelta(days = 1)
     start = history_starting_day.date().isoformat()
     end   = history_ending_day.date().isoformat()
@@ -37,6 +37,12 @@ def get_history_close_prices(full_history):
             prices.append(each_day['Close'])
         history_close_prices[sym] = prices
     return history_close_prices
+
+def cal_simple_moving_average(prices, days) :
+    sma = {}
+    for sym in prices.keys() :
+        sma[sym] = sum([float(x) for x in prices[sym][0:days]]) / days
+    return sma
 
 def merge_current_and_history_close_prices(symbols, current_prices, history_close_prices) :
     merged_prices = {}
@@ -59,6 +65,15 @@ def main() :
 
     merged_prices = merge_current_and_history_close_prices(watchlist, current_prices, history_close_prices)
     print merged_prices
+
+    sma5 = cal_simple_moving_average(merged_prices, 5)
+    print sma5
+
+    sma10 = cal_simple_moving_average(merged_prices, 10)
+    print sma10
+
+    sma20 = cal_simple_moving_average(merged_prices, 20)
+    print sma20
 
 if __name__ == '__main__' :
     main()
