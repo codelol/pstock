@@ -38,6 +38,12 @@ def get_history_close_prices(full_history):
         history_close_prices[sym] = prices
     return history_close_prices
 
+def merge_current_and_history_close_prices(symbols, current_prices, history_close_prices) :
+    merged_prices = {}
+    for sym in symbols :
+        merged_prices[sym] = [current_prices[sym]] + history_close_prices[sym]
+    return merged_prices
+
 def main() :
     watchlist = read_watchlist()
     print watchlist
@@ -50,6 +56,9 @@ def main() :
 
     history_close_prices = get_history_close_prices(full_history)
     print history_close_prices
+
+    merged_prices = merge_current_and_history_close_prices(watchlist, current_prices, history_close_prices)
+    print merged_prices
 
 if __name__ == '__main__' :
     main()
