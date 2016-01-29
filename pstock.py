@@ -49,6 +49,7 @@ class TA:
         self.latest_data = {sym : {} for sym in watchlist}
         self.full_history = full_history
         self.interests_sma = [5, 10, 20]
+        self.rules = [self.rule_sma_crossing]
 
     def get_current_prices(self):
         print 'Requesting current prices:', datetime.now().isoformat()
@@ -73,6 +74,46 @@ class TA:
         self.merge_current_and_history_close_prices()
         self.cal_simple_moving_average()
 
+    def rule_sma_crossing(self):
+        for sym in self.symbols:
+            day1 = self.interests_sma[0]
+            cur_sma1 = self.latest_data[sym]['sma'+str(day1)]
+            pre_sma1 = self.latest_data[sym]['sma'+str(day1)+'_prev']
+
+            day2 = self.interests_sma[1]
+            cur_sma2 = self.latest_data[sym]['sma'+str(day2)]
+            pre_sma2 = self.latest_data[sym]['sma'+str(day2)+'_prev']
+
+            cur_sma1_minus_cur_sma2 = cur_sma1 - cur_sma2
+            pre_sma1_minus_pre_sma2 = pre_sma1 - pre_sma2
+
+            if (cur_sma1_minus_cur_sma2 * pre_sma1_minus_pre_sma2) <= 0:
+                if cur_sma1_minus_cur_sma2 > pre_sma1_minus_pre_sma2:
+                    print sym+': sma'+str(day1) + ' crossing up sma'+str(day2)
+                elif cur_sma1_minus_cur_sma2 < pre_sma1_minus_pre_sma2:
+                    print sym+': sma'+str(day1) + ' crossing down sma'+str(day2)
+                else:
+                    print sym+': sma'+str(day1) + ' and sma'+str(day2) + ' are both 0'
+
+            day3 = self.interests_sma[2]
+            cur_sma3 = self.latest_data[sym]['sma'+str(day3)]
+            pre_sma3 = self.latest_data[sym]['sma'+str(day3)+'_prev']
+
+            cur_sma1_minus_cur_sma3 = cur_sma1 - cur_sma3
+            pre_sma1_minus_pre_sma3 = pre_sma1 - pre_sma3
+
+            if (cur_sma1_minus_cur_sma3 * pre_sma1_minus_pre_sma3) <= 0:
+                if cur_sma1_minus_cur_sma3 > pre_sma1_minus_pre_sma3:
+                    print sym+': sma'+str(day1) + ' crossing up sma'+str(day3)
+                elif cur_sma1_minus_cur_sma3 < pre_sma1_minus_pre_sma3:
+                    print sym+': sma'+str(day1) + ' crossing down sma'+str(day3)
+                else:
+                    print sym+': sma'+str(day1) + ' and sma'+str(day3) + ' are both 0'
+
+    def run_rules(self):
+        for rule in self.rules:
+            rule()
+
     def print_results(self):
         headers = ['Symbol', 'Price', 'Change', 'Change%', 'sma(5 - 10)', 'sma(5 - sma20)']
         rows = []
@@ -93,6 +134,7 @@ class TA:
         while True:
             self.calculations()
             self.print_results()
+            self.run_rules()
             print '============++++++++============'
             time.sleep(60)
 
