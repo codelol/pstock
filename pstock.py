@@ -8,12 +8,6 @@ from datetime import datetime, timedelta
 def read_watchlist() :
     return [line.strip() for line in open("watchlist.txt", 'r')]
 
-def get_current_prices(latest_data, symbols) :
-    print 'Requesting latest:', datetime.now().isoformat()
-    for sym in symbols :
-        # use Google API for no-delay quotes
-        latest_data[sym]['price'] = getQuotes(sym)[0]['LastTradePrice']
-
 def get_all_history(symbols) :
     print 'requesting history data'
     def get_latest_trading_day() :
@@ -48,17 +42,6 @@ def get_all_history(symbols) :
     print 'received history data'
     return ret
 
-def cal_simple_moving_average(latest_data, prices, days) :
-    for sym in prices.keys() :
-        latest_data[sym]['sma'+str(days)] = sum([float(x) for x in prices[sym][0:days]]) / days
-        latest_data[sym]['sma'+str(days)+'_prev'] = sum([float(x) for x in prices[sym][1:days+1]]) / days
-
-def merge_current_and_history_close_prices(symbols, latest_data, full_history) :
-    merged_prices = {}
-    for sym in symbols :
-        merged_prices[sym] = [latest_data[sym]['price']] + full_history[sym]['close_prices']
-    return merged_prices
-
 
 class TA:
     def __init__(self, watchlist, full_history):
@@ -67,17 +50,28 @@ class TA:
         self.full_history = full_history
         self.interests_sma = [5, 10, 20]
 
-    def analysis(self):
-        # put latest info into latest_data
-        get_current_prices(self.latest_data, self.symbols)
+    def get_current_prices(self):
+        print 'Requesting current prices:', datetime.now().isoformat()
+        for sym in self.symbols :
+            # use Google API for no-delay quotes
+            self.latest_data[sym]['price'] = getQuotes(sym)[0]['LastTradePrice']
 
-        merged_prices = merge_current_and_history_close_prices(self.symbols,
-                                                               self.latest_data,
-                                                               self.full_history)
+    def merge_current_and_history_close_prices(self) :
+        merged_prices = {}
+        for sym in self.symbols :
+            merged_prices[sym] = [self.latest_data[sym]['price']] + self.full_history[sym]['close_prices']
+        self.merged_prices = merged_prices
 
-        cal_simple_moving_average(self.latest_data, merged_prices, 5)
-        cal_simple_moving_average(self.latest_data, merged_prices, 10)
-        cal_simple_moving_average(self.latest_data, merged_prices, 20)
+    def cal_simple_moving_average(self) :
+        for sym in self.symbols :
+            for days in self.interests_sma :
+                self.latest_data[sym]['sma'+str(days)] = sum([float(x) for x in self.merged_prices[sym][0:days]]) / days
+                self.latest_data[sym]['sma'+str(days)+'_prev'] = sum([float(x) for x in self.merged_prices[sym][1:days+1]]) / days
+
+    def calculations(self):
+        self.get_current_prices()
+        self.merge_current_and_history_close_prices()
+        self.cal_simple_moving_average()
 
     def print_results(self):
         headers = ['Symbol', 'Price', 'Change', 'Change%', 'sma(5 - 10)', 'sma(5 - sma20)']
@@ -97,7 +91,7 @@ class TA:
     def loop(self):
         import time
         while True:
-            self.analysis()
+            self.calculations()
             self.print_results()
             print '============++++++++============'
             time.sleep(60)
