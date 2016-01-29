@@ -7,12 +7,10 @@ from datetime import datetime, timedelta
 def read_watchlist() :
     return [line.strip() for line in open("watchlist.txt", 'r')]
 
-def get_current_prices(symbols) :
-    # with Yahoo! API
-    # return {sym : Share(sym).get_price() for sym in symbols }
-
-    # with Google API for no-delay quotes
-    return {sym : getQuotes(sym)[0]['LastTradePrice'] for sym in symbols}
+def get_current_prices(latest_data, symbols) :
+    for sym in symbols :
+        # use Google API for no-delay quotes
+        latest_data[sym]['price'] = getQuotes(sym)[0]['LastTradePrice']
 
 def get_all_history(symbols) :
     def get_latest_trading_day() :
@@ -25,70 +23,73 @@ def get_all_history(symbols) :
         }.get(today.weekday(), today)
 
     latest_trading_day = get_latest_trading_day()
-    print 'Lastest trading day:',latest_trading_day.date().isoformat()
+    print 'Latest trading day:',latest_trading_day.date().isoformat()
 
     history_starting_day = latest_trading_day - timedelta(days = 40)
     history_ending_day = latest_trading_day - timedelta(days = 1)
     start = history_starting_day.date().isoformat()
     end   = history_ending_day.date().isoformat()
 
-    return {sym : Share(sym).get_historical(start, end) for sym in symbols}
+    full_history = {sym : Share(sym).get_historical(start, end) for sym in symbols}
+    ret = {sym : {} for sym in symbols}
 
-def get_history_close_prices(full_history):
-    history_close_prices = {}
-    for sym in full_history.keys() :
-        history_close_prices[sym] = [x['Close'] for x in full_history[sym]]
-    return history_close_prices
+    def get_history_close_prices(full_history):
+        history_close_prices = {}
+        for sym in full_history.keys() :
+            history_close_prices[sym] = [x['Close'] for x in full_history[sym]]
+        return history_close_prices
 
-def cal_simple_moving_average(prices, days) :
-    sma = {}
+    history_close_prices = get_history_close_prices(full_history)
+    for sym in symbols :
+        ret[sym]['close_prices'] = history_close_prices[sym]
+
+    return ret
+
+def cal_simple_moving_average(latest_data, prices, days) :
     for sym in prices.keys() :
-        sma[sym] = sum([float(x) for x in prices[sym][0:days]]) / days
-    return sma
+        latest_data[sym]['sma'+str(days)] = sum([float(x) for x in prices[sym][0:days]]) / days
+        latest_data[sym]['sma'+str(days)+'_prev'] = sum([float(x) for x in prices[sym][1:days+1]]) / days
 
-def merge_current_and_history_close_prices(symbols, current_prices, history_close_prices) :
+def merge_current_and_history_close_prices(symbols, latest_data, full_history) :
     merged_prices = {}
     for sym in symbols :
-        merged_prices[sym] = [current_prices[sym]] + history_close_prices[sym]
+        merged_prices[sym] = [latest_data[sym]['price']] + full_history[sym]['close_prices']
     return merged_prices
 
-def print_results(symbols, current_prices, history_close_prices, sma5, sma10, sma20) :
-    for sym in symbols :
-        price_change = float(current_prices[sym]) - float(history_close_prices[sym][0])
-        print sym,
-        print current_prices[sym],
-        print '{0:.2f}'.format(price_change),
-        print '{0:.2%}'.format(price_change / float(history_close_prices[sym][0])),
-        print '{0:.2f}'.format(float(sma5[sym]) - float(sma10[sym])),
-        print '{0:.2f}'.format(float(sma5[sym]) - float(sma20[sym]))
 
+def print_results(symbols, latest_data, full_history) :
+    for sym in symbols :
+        price_change = float(latest_data[sym]['price']) - float(full_history[sym]['close_prices'][0])
+        print sym,
+        print latest_data[sym]['price'],
+        print '{0:.2f}'.format(price_change),
+        print '{0:.2%}'.format(price_change / float(full_history[sym]['close_prices'][0])),
+        print '{0:.2f}'.format(float(latest_data[sym]['sma5']) - float(latest_data[sym]['sma10'])),
+        print '{0:.2f}'.format(float(latest_data[sym]['sma5']) - float(latest_data[sym]['sma20']))
+
+
+def analysis(watchlist, full_history, latest_data) :
+    # put latest info into latest_data
+    get_current_prices(latest_data, watchlist)
+
+    merged_prices = merge_current_and_history_close_prices(watchlist, latest_data, full_history)
+    print merged_prices
+
+    cal_simple_moving_average(latest_data, merged_prices, 5)
+    cal_simple_moving_average(latest_data, merged_prices, 10)
+    cal_simple_moving_average(latest_data, merged_prices, 20)
+
+    print_results(watchlist, latest_data, full_history)
 
 def main() :
     watchlist = read_watchlist()
+    latest_data = {sym : {} for sym in watchlist}
     print watchlist
 
-    current_prices = get_current_prices(watchlist)
-    # print current_prices
-
+    # put history info into full_history
     full_history = get_all_history(watchlist)
-    # print full_history
 
-    history_close_prices = get_history_close_prices(full_history)
-    # print history_close_prices
-
-    merged_prices = merge_current_and_history_close_prices(watchlist, current_prices, history_close_prices)
-    # print merged_prices
-
-    sma5 = cal_simple_moving_average(merged_prices, 5)
-    # print sma5
-
-    sma10 = cal_simple_moving_average(merged_prices, 10)
-    # print sma10
-
-    sma20 = cal_simple_moving_average(merged_prices, 20)
-    # print sma20
-
-    print_results(watchlist, current_prices, history_close_prices, sma5, sma10, sma20)
+    analysis(watchlist, full_history, latest_data)
 
 if __name__ == '__main__' :
     main()
