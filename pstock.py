@@ -2,6 +2,7 @@
 
 from yahoo_finance import Share
 from googlefinance import getQuotes
+from tabulate import tabulate
 from datetime import datetime, timedelta
 
 def read_watchlist() :
@@ -58,14 +59,19 @@ def merge_current_and_history_close_prices(symbols, latest_data, full_history) :
 
 
 def print_results(symbols, latest_data, full_history) :
+    headers = ['Symbol', 'Price', 'Change', 'Change%', 'sma5 - sma10', 'sma5 - sma20']
+    rows = []
     for sym in symbols :
+        r = []
         price_change = float(latest_data[sym]['price']) - float(full_history[sym]['close_prices'][0])
-        print sym,
-        print latest_data[sym]['price'],
-        print '{0:.2f}'.format(price_change),
-        print '{0:.2%}'.format(price_change / float(full_history[sym]['close_prices'][0])),
-        print '{0:.2f}'.format(float(latest_data[sym]['sma5']) - float(latest_data[sym]['sma10'])),
-        print '{0:.2f}'.format(float(latest_data[sym]['sma5']) - float(latest_data[sym]['sma20']))
+        r.append(sym)
+        r.append(latest_data[sym]['price'])
+        r.append('{0:+.2f}'.format(price_change))
+        r.append('{0:+.2%}'.format(price_change / float(full_history[sym]['close_prices'][0])))
+        r.append('{0:+.2f}'.format(float(latest_data[sym]['sma5']) - float(latest_data[sym]['sma10'])))
+        r.append('{0:+.2f}'.format(float(latest_data[sym]['sma5']) - float(latest_data[sym]['sma20'])))
+        rows.append(r)
+    print tabulate(rows, headers)
 
 
 def analysis(watchlist, full_history, latest_data) :
@@ -73,7 +79,6 @@ def analysis(watchlist, full_history, latest_data) :
     get_current_prices(latest_data, watchlist)
 
     merged_prices = merge_current_and_history_close_prices(watchlist, latest_data, full_history)
-    print merged_prices
 
     cal_simple_moving_average(latest_data, merged_prices, 5)
     cal_simple_moving_average(latest_data, merged_prices, 10)
