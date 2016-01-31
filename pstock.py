@@ -77,12 +77,17 @@ class TA:
     def rule_sma_crossing(self):
         for sym in self.symbols:
             day1 = self.interests_sma[0]
+            day2 = self.interests_sma[1]
+            day3 = self.interests_sma[2]
+
             cur_sma1 = self.latest_data[sym]['sma'+str(day1)]
             pre_sma1 = self.latest_data[sym]['sma'+str(day1)+'_prev']
 
-            day2 = self.interests_sma[1]
             cur_sma2 = self.latest_data[sym]['sma'+str(day2)]
             pre_sma2 = self.latest_data[sym]['sma'+str(day2)+'_prev']
+
+            cur_sma3 = self.latest_data[sym]['sma'+str(day3)]
+            pre_sma3 = self.latest_data[sym]['sma'+str(day3)+'_prev']
 
             cur_sma1_minus_cur_sma2 = cur_sma1 - cur_sma2
             pre_sma1_minus_pre_sma2 = pre_sma1 - pre_sma2
@@ -95,10 +100,6 @@ class TA:
                 else:
                     print sym+': sma'+str(day1) + ' and sma'+str(day2) + ' are both 0'
 
-            day3 = self.interests_sma[2]
-            cur_sma3 = self.latest_data[sym]['sma'+str(day3)]
-            pre_sma3 = self.latest_data[sym]['sma'+str(day3)+'_prev']
-
             cur_sma1_minus_cur_sma3 = cur_sma1 - cur_sma3
             pre_sma1_minus_pre_sma3 = pre_sma1 - pre_sma3
 
@@ -110,12 +111,30 @@ class TA:
                 else:
                     print sym+': sma'+str(day1) + ' and sma'+str(day3) + ' are both 0'
 
+            cur_sma2_minus_cur_sma3 = cur_sma2 - cur_sma3
+            pre_sma2_minus_pre_sma3 = pre_sma2 - pre_sma3
+
+            if (cur_sma2_minus_cur_sma3 * pre_sma2_minus_pre_sma3) <= 0:
+                if cur_sma2_minus_cur_sma3 > pre_sma2_minus_pre_sma3:
+                    print sym+': sma'+str(day2) + ' crossing up sma'+str(day3)
+                elif cur_sma2_minus_cur_sma3 < pre_sma2_minus_pre_sma3:
+                    print sym+': sma'+str(day2) + ' crossing down sma'+str(day3)
+                else:
+                    print sym+': sma'+str(day2) + ' and sma'+str(day3) + ' are both 0'
+
     def run_rules(self):
         for rule in self.rules:
             rule()
 
     def print_results(self):
-        headers = ['Symbol', 'Price', 'Change', 'Change%', 'sma(5 - 10)', 'sma(5 - sma20)']
+        day1 = self.interests_sma[0]
+        day2 = self.interests_sma[1]
+        day3 = self.interests_sma[2]
+        headers = ['Symbol', 'Price', 'Change', 'Change%',
+                   'sma('+str(day1)+' - '+str(day2)+')',
+                   'sma('+str(day1)+' - '+str(day3)+')',
+                   'sma('+str(day2)+' - '+str(day3)+')',
+                   ]
         rows = []
         for sym in self.symbols :
             r = []
@@ -124,8 +143,9 @@ class TA:
             r.append(self.latest_data[sym]['price'])
             r.append('{0:+.2f}'.format(price_change))
             r.append('{0:+.2f}'.format(price_change * 100 / float(self.full_history[sym]['close_prices'][0])))
-            r.append('{0:+.2f}'.format(float(self.latest_data[sym]['sma5']) - float(self.latest_data[sym]['sma10'])))
-            r.append('{0:+.2f}'.format(float(self.latest_data[sym]['sma5']) - float(self.latest_data[sym]['sma20'])))
+            r.append('{0:+.2f}'.format(float(self.latest_data[sym]['sma'+str(day1)]) - float(self.latest_data[sym]['sma'+str(day2)])))
+            r.append('{0:+.2f}'.format(float(self.latest_data[sym]['sma'+str(day1)]) - float(self.latest_data[sym]['sma'+str(day3)])))
+            r.append('{0:+.2f}'.format(float(self.latest_data[sym]['sma'+str(day2)]) - float(self.latest_data[sym]['sma'+str(day3)])))
             rows.append(r)
         print tabulate(rows, headers)
 
