@@ -4,6 +4,8 @@ from yahoo_finance import Share
 from googlefinance import getQuotes
 from tabulate import tabulate
 from datetime import datetime, timedelta
+import time
+import sys
 
 def read_watchlist() :
     return [line.strip() for line in open("watchlist.txt", 'r')]
@@ -70,7 +72,6 @@ class TA:
                 self.latest_data[sym]['sma'+str(days)+'_prev'] = sum([float(x) for x in self.merged_prices[sym][1:days+1]]) / days
 
     def calculations(self):
-        self.get_current_prices()
         self.merge_current_and_history_close_prices()
         self.cal_simple_moving_average()
 
@@ -150,20 +151,34 @@ class TA:
         print tabulate(rows, headers)
 
     def loop(self):
-        import time
+        sleep_time = 60
         while True:
-            self.calculations()
-            self.print_results()
-            self.run_rules()
-            print '============++++++++============'
-            time.sleep(60)
+            try:
+                self.get_current_prices()
+                self.calculations()
+                self.print_results()
+                self.run_rules()
+                print '============++++++++============'
+            except:
+                print 'Unexpected error happened:', sys.exc_info()[0]
+                print 'Retrying in '+str(sleep_time)+' seconds...'
+            finally:
+                time.sleep(sleep_time)
 
 def main() :
     watchlist = read_watchlist()
     print watchlist
 
     # put history info into full_history
-    full_history = get_all_history(watchlist)
+    while True:
+        try:
+            full_history = get_all_history(watchlist)
+            break
+        except:
+            sleep_time = 60
+            print 'Unable to retrieve history data: ', sys.exc_info()[0]
+            print 'Retrying in '+str(sleep_time)+' seconds...'
+            time.sleep(sleep_time)
 
     ta = TA(watchlist, full_history)
     ta.loop()
