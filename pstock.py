@@ -131,7 +131,7 @@ class TA:
         day1 = self.interests_sma[0]
         day2 = self.interests_sma[1]
         day3 = self.interests_sma[2]
-        headers = ['Symbol', 'Price', 'Change', 'Change%',
+        headers = ['Symbol', 'Price', 'Change%', 'Change',
                    'sma('+str(day1)+' - '+str(day2)+')',
                    'sma('+str(day1)+' - '+str(day3)+')',
                    'sma('+str(day2)+' - '+str(day3)+')',
@@ -142,8 +142,8 @@ class TA:
             price_change = float(self.latest_data[sym]['price']) - float(self.full_history[sym]['close_prices'][0])
             r.append(sym)
             r.append(self.latest_data[sym]['price'])
-            r.append('{0:+.2f}'.format(price_change))
             r.append('{0:+.2f}'.format(price_change * 100 / float(self.full_history[sym]['close_prices'][0])))
+            r.append('{0:+.2f}'.format(price_change))
             r.append('{0:+.2f}'.format(float(self.latest_data[sym]['sma'+str(day1)]) - float(self.latest_data[sym]['sma'+str(day2)])))
             r.append('{0:+.2f}'.format(float(self.latest_data[sym]['sma'+str(day1)]) - float(self.latest_data[sym]['sma'+str(day3)])))
             r.append('{0:+.2f}'.format(float(self.latest_data[sym]['sma'+str(day2)]) - float(self.latest_data[sym]['sma'+str(day3)])))
