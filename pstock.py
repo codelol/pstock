@@ -75,57 +75,57 @@ class TA:
         self.merge_current_and_history_close_prices()
         self.cal_simple_moving_average()
 
-    def rule_sma_crossing(self):
-        for sym in self.symbols:
-            day1 = self.interests_sma[0]
-            day2 = self.interests_sma[1]
-            day3 = self.interests_sma[2]
+    def rule_sma_crossing(self, sym):
+        day1 = self.interests_sma[0]
+        day2 = self.interests_sma[1]
+        day3 = self.interests_sma[2]
 
-            cur_sma1 = self.latest_data[sym]['sma'+str(day1)]
-            pre_sma1 = self.latest_data[sym]['sma'+str(day1)+'_prev']
+        cur_sma1 = self.latest_data[sym]['sma'+str(day1)]
+        pre_sma1 = self.latest_data[sym]['sma'+str(day1)+'_prev']
 
-            cur_sma2 = self.latest_data[sym]['sma'+str(day2)]
-            pre_sma2 = self.latest_data[sym]['sma'+str(day2)+'_prev']
+        cur_sma2 = self.latest_data[sym]['sma'+str(day2)]
+        pre_sma2 = self.latest_data[sym]['sma'+str(day2)+'_prev']
 
-            cur_sma3 = self.latest_data[sym]['sma'+str(day3)]
-            pre_sma3 = self.latest_data[sym]['sma'+str(day3)+'_prev']
+        cur_sma3 = self.latest_data[sym]['sma'+str(day3)]
+        pre_sma3 = self.latest_data[sym]['sma'+str(day3)+'_prev']
 
-            cur_sma1_minus_cur_sma2 = cur_sma1 - cur_sma2
-            pre_sma1_minus_pre_sma2 = pre_sma1 - pre_sma2
+        cur_sma1_minus_cur_sma2 = cur_sma1 - cur_sma2
+        pre_sma1_minus_pre_sma2 = pre_sma1 - pre_sma2
 
-            if (cur_sma1_minus_cur_sma2 * pre_sma1_minus_pre_sma2) <= 0:
-                if cur_sma1_minus_cur_sma2 > pre_sma1_minus_pre_sma2:
-                    print sym+': sma'+str(day1) + ' crossing up sma'+str(day2)
-                elif cur_sma1_minus_cur_sma2 < pre_sma1_minus_pre_sma2:
-                    print sym+': sma'+str(day1) + ' crossing down sma'+str(day2)
-                else:
-                    print sym+': sma'+str(day1) + ' and sma'+str(day2) + ' are both 0'
+        if (cur_sma1_minus_cur_sma2 * pre_sma1_minus_pre_sma2) <= 0:
+            if cur_sma1_minus_cur_sma2 > pre_sma1_minus_pre_sma2:
+                print sym+': sma'+str(day1) + ' crossing up sma'+str(day2)
+            elif cur_sma1_minus_cur_sma2 < pre_sma1_minus_pre_sma2:
+                print sym+': sma'+str(day1) + ' crossing down sma'+str(day2)
+            else:
+                print sym+': sma'+str(day1) + ' and sma'+str(day2) + ' are both 0'
 
-            cur_sma1_minus_cur_sma3 = cur_sma1 - cur_sma3
-            pre_sma1_minus_pre_sma3 = pre_sma1 - pre_sma3
+        cur_sma1_minus_cur_sma3 = cur_sma1 - cur_sma3
+        pre_sma1_minus_pre_sma3 = pre_sma1 - pre_sma3
 
-            if (cur_sma1_minus_cur_sma3 * pre_sma1_minus_pre_sma3) <= 0:
-                if cur_sma1_minus_cur_sma3 > pre_sma1_minus_pre_sma3:
-                    print sym+': sma'+str(day1) + ' crossing up sma'+str(day3)
-                elif cur_sma1_minus_cur_sma3 < pre_sma1_minus_pre_sma3:
-                    print sym+': sma'+str(day1) + ' crossing down sma'+str(day3)
-                else:
-                    print sym+': sma'+str(day1) + ' and sma'+str(day3) + ' are both 0'
+        if (cur_sma1_minus_cur_sma3 * pre_sma1_minus_pre_sma3) <= 0:
+            if cur_sma1_minus_cur_sma3 > pre_sma1_minus_pre_sma3:
+                print sym+': sma'+str(day1) + ' crossing up sma'+str(day3)
+            elif cur_sma1_minus_cur_sma3 < pre_sma1_minus_pre_sma3:
+                print sym+': sma'+str(day1) + ' crossing down sma'+str(day3)
+            else:
+                print sym+': sma'+str(day1) + ' and sma'+str(day3) + ' are both 0'
 
-            cur_sma2_minus_cur_sma3 = cur_sma2 - cur_sma3
-            pre_sma2_minus_pre_sma3 = pre_sma2 - pre_sma3
+        cur_sma2_minus_cur_sma3 = cur_sma2 - cur_sma3
+        pre_sma2_minus_pre_sma3 = pre_sma2 - pre_sma3
 
-            if (cur_sma2_minus_cur_sma3 * pre_sma2_minus_pre_sma3) <= 0:
-                if cur_sma2_minus_cur_sma3 > pre_sma2_minus_pre_sma3:
-                    print sym+': sma'+str(day2) + ' crossing up sma'+str(day3)
-                elif cur_sma2_minus_cur_sma3 < pre_sma2_minus_pre_sma3:
-                    print sym+': sma'+str(day2) + ' crossing down sma'+str(day3)
-                else:
-                    print sym+': sma'+str(day2) + ' and sma'+str(day3) + ' are both 0'
+        if (cur_sma2_minus_cur_sma3 * pre_sma2_minus_pre_sma3) <= 0:
+            if cur_sma2_minus_cur_sma3 > pre_sma2_minus_pre_sma3:
+                print sym+': sma'+str(day2) + ' crossing up sma'+str(day3)
+            elif cur_sma2_minus_cur_sma3 < pre_sma2_minus_pre_sma3:
+                print sym+': sma'+str(day2) + ' crossing down sma'+str(day3)
+            else:
+                print sym+': sma'+str(day2) + ' and sma'+str(day3) + ' are both 0'
 
     def run_rules(self):
-        for rule in self.rules:
-            rule()
+        for sym in self.symbols:
+            for rule in self.rules:
+                rule(sym)
 
     def print_results(self):
         day1 = self.interests_sma[0]
