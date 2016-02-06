@@ -28,7 +28,7 @@ def get_all_history(symbols) :
     start = history_starting_day.date().isoformat()
     end   = history_ending_day.date().isoformat()
 
-    ret = {sym : [{}] + Share(sym).get_historical(start, end) for sym in symbols}
+    ret = {sym : [{'Close':'0'}] + Share(sym).get_historical(start, end) for sym in symbols}
     print 'received history data'
     return ret
 
@@ -44,7 +44,9 @@ class TA:
     def get_latest(self):
         print 'Requesting latest info:', datetime.now().isoformat()
         errmsg = ''
+        market_stopped = True
         for sym in self.symbols :
+            old_price = self.full_history[sym][0]['Close']
             # or Yahoo if Google is not available
             ydata = Share(sym)
             self.full_history[sym][0]['Close'] = ydata.get_price()
@@ -56,7 +58,11 @@ class TA:
                 self.full_history[sym][0]['Close'] = getQuotes(sym)[0]['LastTradePrice']
             except:
                 errmsg = 'Google API error: ' + str(sys.exc_info()[0])
-        return errmsg
+
+            if old_price != self.full_history[sym][0]['Close']:
+                market_stopped = False
+
+        return errmsg, market_stopped
 
     def cal_simple_moving_average(self) :
         for sym in self.symbols :
@@ -157,9 +163,13 @@ class TA:
         sleep_time = 120
         while True:
             try:
-                errmsg = self.get_latest()
+                errmsg, market_stopped = self.get_latest()
                 if len(errmsg) > 0:
                     print errmsg
+                if market_stopped:
+                    print 'Market has closed. Quit now.'
+                    sleep_time = 0
+                    return
 
                 self.calculations()
                 self.print_results()
