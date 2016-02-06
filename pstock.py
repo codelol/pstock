@@ -38,19 +38,23 @@ class TA:
         self.aggregates = {sym : {} for sym in watchlist}
         self.full_history = full_history
         self.interests_sma = [5, 10, 20]
-        self.rules = [self.rule_sma_crossing]
+        self.rules = [self.rule_sma_crossing,
+                      self.rule_price_gaps]
 
     def get_latest(self):
         print 'Requesting latest info:', datetime.now().isoformat()
         errmsg = ''
         for sym in self.symbols :
+            # or Yahoo if Google is not available
+            ydata = Share(sym)
+            self.full_history[sym][0]['Close'] = ydata.get_price()
+            self.full_history[sym][0]['Low']   = ydata.get_days_low()
+            self.full_history[sym][0]['High']  = ydata.get_days_high()
+
             try:
-                # use Google API for no-delay quotes
+                # use Google API for no-delay quotes if the service is available
                 self.full_history[sym][0]['Close'] = getQuotes(sym)[0]['LastTradePrice']
             except:
-                # or Yahoo if Google is not available
-                ydata = Share(sym)
-                self.full_history[sym][0]['Close'] = ydata.get_price()
                 errmsg = 'Google API error: ' + str(sys.exc_info()[0])
         return errmsg
 
@@ -109,6 +113,17 @@ class TA:
                 print sym+': sma'+str(day2) + ' crossing down sma'+str(day3)
             else:
                 print sym+': sma'+str(day2) + ' and sma'+str(day3) + ' are both 0'
+
+    def rule_price_gaps(self, sym):
+        cur_low = float(self.full_history[sym][0]['Low'])
+        cur_high = float(self.full_history[sym][0]['High'])
+        prev_low = float(self.full_history[sym][1]['Low'])
+        prev_high = float(self.full_history[sym][1]['High'])
+
+        if cur_low > prev_high:
+            print sym+': gap up. Gap size: '+'{0:+.2f}'.format(cur_low - prev_high)
+        if cur_high < prev_low:
+            print sym+': gap down. Gap size: '+'{0:+.2f}'.format(cur_high - prev_low)
 
     def run_rules(self):
         for sym in self.symbols:
