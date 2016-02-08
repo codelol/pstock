@@ -90,35 +90,39 @@ class TA:
         cur_sma1_minus_cur_sma2 = cur_sma1 - cur_sma2
         pre_sma1_minus_pre_sma2 = pre_sma1 - pre_sma2
 
+        msg = ''
         if (cur_sma1_minus_cur_sma2 * pre_sma1_minus_pre_sma2) <= 0:
             if cur_sma1_minus_cur_sma2 > pre_sma1_minus_pre_sma2:
-                print sym+': sma'+str(day1) + ' crossing up sma'+str(day2)
+                msg += ' sma'+str(day1) + ' crossing up sma'+str(day2)+'.'
             elif cur_sma1_minus_cur_sma2 < pre_sma1_minus_pre_sma2:
-                print sym+': sma'+str(day1) + ' crossing down sma'+str(day2)
+                msg += ' sma'+str(day1) + ' crossing down sma'+str(day2)+'.'
             else:
-                print sym+': sma'+str(day1) + ' and sma'+str(day2) + ' are both 0'
+                msg += ' sma'+str(day1) + ' and sma'+str(day2) + ' are both 0.'
 
         cur_sma1_minus_cur_sma3 = cur_sma1 - cur_sma3
         pre_sma1_minus_pre_sma3 = pre_sma1 - pre_sma3
 
         if (cur_sma1_minus_cur_sma3 * pre_sma1_minus_pre_sma3) <= 0:
             if cur_sma1_minus_cur_sma3 > pre_sma1_minus_pre_sma3:
-                print sym+': sma'+str(day1) + ' crossing up sma'+str(day3)
+                msg += ' sma'+str(day1) + ' crossing up sma'+str(day3)+'.'
             elif cur_sma1_minus_cur_sma3 < pre_sma1_minus_pre_sma3:
-                print sym+': sma'+str(day1) + ' crossing down sma'+str(day3)
+                msg += ' sma'+str(day1) + ' crossing down sma'+str(day3)+'.'
             else:
-                print sym+': sma'+str(day1) + ' and sma'+str(day3) + ' are both 0'
+                msg += ' sma'+str(day1) + ' and sma'+str(day3) + ' are both 0'
 
         cur_sma2_minus_cur_sma3 = cur_sma2 - cur_sma3
         pre_sma2_minus_pre_sma3 = pre_sma2 - pre_sma3
 
         if (cur_sma2_minus_cur_sma3 * pre_sma2_minus_pre_sma3) <= 0:
             if cur_sma2_minus_cur_sma3 > pre_sma2_minus_pre_sma3:
-                print sym+': sma'+str(day2) + ' crossing up sma'+str(day3)
+                msg += ' sma'+str(day2) + ' crossing up sma'+str(day3)+'.'
             elif cur_sma2_minus_cur_sma3 < pre_sma2_minus_pre_sma3:
-                print sym+': sma'+str(day2) + ' crossing down sma'+str(day3)
+                msg += ' sma'+str(day2) + ' crossing down sma'+str(day3)+'.'
             else:
-                print sym+': sma'+str(day2) + ' and sma'+str(day3) + ' are both 0'
+                msg += ' sma'+str(day2) + ' and sma'+str(day3) + ' are both 0.'
+
+        if len(msg) > 0:
+            print sym+':'+msg
 
     def rule_price_gaps(self, sym):
         cur_low = float(self.full_history[sym][0]['Low'])
@@ -127,9 +131,11 @@ class TA:
         prev_high = float(self.full_history[sym][1]['High'])
 
         if cur_low > prev_high:
-            print sym+': gap up. Gap size: '+'{0:+.2f}'.format(cur_low - prev_high)
+            print sym+': gap up. Gap size: '+'{0:+.2f}'.format(cur_low - prev_high),
+            print ' ({0:+.2f}'.format(prev_high)+' -> '+ '{0:+.2f})'.format(cur_low)
         if cur_high < prev_low:
-            print sym+': gap down. Gap size: '+'{0:+.2f}'.format(cur_high - prev_low)
+            print sym+': gap down. Gap size: '+'{0:+.2f}'.format(cur_high - prev_low),
+            print ' ({0:+.2f}'.format(prev_low)+' -> '+ '{0:+.2f})'.format(cur_high)
 
     def run_rules(self):
         for sym in self.symbols:
