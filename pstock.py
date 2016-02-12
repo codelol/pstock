@@ -39,7 +39,8 @@ class TA:
         self.full_history = full_history
         self.interests_sma = [5, 10, 20]
         self.rules = [self.rule_sma_crossing,
-                      self.rule_price_gaps]
+                      self.rule_price_gaps,
+                      self.rule_volume_breakout]
 
     def get_latest(self):
         print 'Requesting latest info:', datetime.now().isoformat()
@@ -52,6 +53,7 @@ class TA:
             self.full_history[sym][0]['Close'] = ydata.get_price()
             self.full_history[sym][0]['Low']   = ydata.get_days_low()
             self.full_history[sym][0]['High']  = ydata.get_days_high()
+            self.full_history[sym][0]['Volume']  = ydata.get_volume()
 
             try:
                 # use Google API for no-delay quotes if the service is available
@@ -136,6 +138,19 @@ class TA:
         if cur_high < prev_low:
             print sym+': gap down. Gap size: '+'{0:+.2f}'.format(cur_high - prev_low),
             print ' ({0:+.2f}'.format(prev_low)+' -> '+ '{0:+.2f})'.format(cur_high)
+
+    def rule_volume_breakout(self, sym):
+        cur_volume = float(self.full_history[sym][0]['Volume'])
+        threshold = 1.15
+        avg_volumes = {5:0, 10:0}
+        msg = ''
+        for days in sorted(avg_volumes.keys()):
+            avgtmp = sum([float(x['Volume']) for x in self.full_history[sym][1:days+1]]) / days
+            avg_volumes[days] = avgtmp
+            if cur_volume >= avgtmp * threshold :
+                msg += ' volume breakout '+str(days)+'-day average by '+'{0:+.0f}%'.format((cur_volume - avgtmp) * 100 / avgtmp)
+        if len(msg) > 0:
+            print sym+':'+msg
 
     def run_rules(self):
         for sym in self.symbols:
