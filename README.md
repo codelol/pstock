@@ -1,5 +1,8 @@
 # pstock
-depends on
+
+Must use Python 3, mainly for its better exception printing.
+
+Also depends on the following packages:
 
 (1) yahoo finance api python package, for history prices
 https://pypi.python.org/pypi/yahoo-finance/1.1.4
