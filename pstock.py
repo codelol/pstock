@@ -1,17 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from yahoo_finance import Share
 from googlefinance import getQuotes
 from tabulate import tabulate
 from datetime import datetime, timedelta
-import time
-import sys
+import time, sys, traceback
 
 def read_watchlist() :
     return [line.strip() for line in open("watchlist.txt", 'r')]
 
 def get_all_history(symbols) :
-    print 'requesting history data'
+    print('requesting history data')
     def get_latest_trading_day() :
         # return today if it is a trading day, otherwise return the most recent one
         today = datetime.today()
@@ -29,7 +28,7 @@ def get_all_history(symbols) :
     end   = history_ending_day.date().isoformat()
 
     ret = {sym : [{'Close':'0'}] + Share(sym).get_historical(start, end) for sym in symbols}
-    print 'received history data'
+    print('received history data')
     return ret
 
 class TA:
@@ -43,7 +42,7 @@ class TA:
                       self.rule_volume_breakout]
 
     def get_latest(self):
-        print 'Requesting latest info:', datetime.now().isoformat()
+        print('Requesting latest info: ' + datetime.now().isoformat())
         errmsg = ''
         market_stopped = True
         for sym in self.symbols :
@@ -124,7 +123,7 @@ class TA:
                 msg += ' sma'+str(day2) + ' and sma'+str(day3) + ' are both 0.'
 
         if len(msg) > 0:
-            print sym+':'+msg
+            print(sym+':'+msg)
 
     def rule_price_gaps(self, sym):
         cur_low = float(self.full_history[sym][0]['Low'])
@@ -133,11 +132,11 @@ class TA:
         prev_high = float(self.full_history[sym][1]['High'])
 
         if cur_low > prev_high:
-            print sym+': gap up. Gap size: '+'{0:+.2f}'.format(cur_low - prev_high),
-            print ' ({0:+.2f}'.format(prev_high)+' -> '+ '{0:+.2f})'.format(cur_low)
+            print(sym+': gap up. Gap size: '+'{0:+.2f}'.format(cur_low - prev_high) + \
+            ' ({0:+.2f}'.format(prev_high)+' -> '+ '{0:+.2f})'.format(cur_low))
         if cur_high < prev_low:
-            print sym+': gap down. Gap size: '+'{0:+.2f}'.format(cur_high - prev_low),
-            print ' ({0:+.2f}'.format(prev_low)+' -> '+ '{0:+.2f})'.format(cur_high)
+            print(sym+': gap down. Gap size: '+'{0:+.2f}'.format(cur_high - prev_low) + \
+            ' ({0:+.2f}'.format(prev_low)+' -> '+ '{0:+.2f})'.format(cur_high))
 
     def rule_volume_breakout(self, sym):
         msg = ''
@@ -154,7 +153,7 @@ class TA:
                 msg += ' cur-week volume up prev 4-week average by '+'{0:+.0f}%'.format((week_volume - prev4week_volume) * 100 / prev4week_volume)+'.'
 
         if len(msg) > 0:
-            print sym+':'+msg
+            print(sym+':'+msg)
 
     def run_rules(self):
         for sym in self.symbols:
@@ -182,7 +181,7 @@ class TA:
             r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day1)]) - float(self.aggregates[sym]['sma'+str(day3)])))
             r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day2)]) - float(self.aggregates[sym]['sma'+str(day3)])))
             rows.append(r)
-        print tabulate(rows, headers)
+        print(tabulate(rows, headers))
 
     def loop(self):
         sleep_time = 120
@@ -190,25 +189,25 @@ class TA:
             try:
                 errmsg, market_stopped = self.get_latest()
                 if len(errmsg) > 0:
-                    print errmsg
+                    print(errmsg)
                 if market_stopped:
-                    print 'Market is closed. Quit now.'
+                    print('Market is closed. Quit now.')
                     sleep_time = 0
                     return
 
                 self.calculations()
                 self.print_results()
                 self.run_rules()
-                print '============++++++++============'
-            except:
-                print 'Unexpected error happened:', sys.exc_info()[0]
-                print 'Retrying in '+str(sleep_time)+' seconds...'
+                print('============++++++++============')
+            except Exception as err:
+                traceback.print_tb(err.__traceback__)
+                print('Retrying in '+str(sleep_time)+' seconds...')
             finally:
                 time.sleep(sleep_time)
 
 def main() :
     watchlist = read_watchlist()
-    print watchlist
+    print(watchlist)
 
     # put history info into full_history
     while True:
@@ -217,8 +216,8 @@ def main() :
             break
         except:
             sleep_time = 60
-            print 'Unable to retrieve history data: ', sys.exc_info()[0]
-            print 'Retrying in '+str(sleep_time)+' seconds...'
+            print('Unable to retrieve history data: ' + sys.exc_info()[0])
+            print('Retrying in '+str(sleep_time)+' seconds...')
             time.sleep(sleep_time)
 
     ta = TA(watchlist, full_history)
