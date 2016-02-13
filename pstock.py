@@ -140,15 +140,19 @@ class TA:
             print ' ({0:+.2f}'.format(prev_low)+' -> '+ '{0:+.2f})'.format(cur_high)
 
     def rule_volume_breakout(self, sym):
-        cur_volume = float(self.full_history[sym][0]['Volume'])
-        threshold = 1.15
-        avg_volumes = {5:0, 10:0}
         msg = ''
-        for days in sorted(avg_volumes.keys()):
+        threshold = 1.15
+        day_volume = float(self.full_history[sym][0]['Volume'])
+        for days in [5, 10]:
             avgtmp = sum([float(x['Volume']) for x in self.full_history[sym][1:days+1]]) / days
-            avg_volumes[days] = avgtmp
-            if cur_volume >= avgtmp * threshold :
-                msg += ' volume breakout '+str(days)+'-day average by '+'{0:+.0f}%'.format((cur_volume - avgtmp) * 100 / avgtmp)
+            if day_volume >= avgtmp * threshold :
+                msg += ' cur-day volume up prev '+str(days)+'-day average by '+'{0:+.0f}%'.format((day_volume - avgtmp) * 100 / avgtmp)+'.'
+
+        week_volume = sum([float(x['Volume']) for x in self.full_history[sym][0:5]])
+        prev4week_volume = (sum([float(x['Volume']) for x in self.full_history[sym][5:20+5]])) / (20 / 5)
+        if week_volume >= prev4week_volume * threshold:
+                msg += ' cur-week volume up prev 4-week average by '+'{0:+.0f}%'.format((week_volume - prev4week_volume) * 100 / prev4week_volume)+'.'
+
         if len(msg) > 0:
             print sym+':'+msg
 
@@ -188,7 +192,7 @@ class TA:
                 if len(errmsg) > 0:
                     print errmsg
                 if market_stopped:
-                    print 'Market has closed. Quit now.'
+                    print 'Market is closed. Quit now.'
                     sleep_time = 0
                     return
 
