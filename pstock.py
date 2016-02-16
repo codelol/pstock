@@ -132,10 +132,12 @@ class TA:
         prev_high = float(self.full_history[sym][1]['High'])
 
         if cur_low > prev_high:
-            print(sym+': gap up. Gap size: '+'{0:+.2f}'.format(cur_low - prev_high) + \
+            print(sym+': gap up. Gap size: ' + '{0:+.2f}%'.format((cur_low - prev_high)/prev_high * 100) + \
+            ' {0:+.2f}$'.format(cur_low - prev_high) + \
             ' ({0:+.2f}'.format(prev_high)+' -> '+ '{0:+.2f})'.format(cur_low))
         if cur_high < prev_low:
-            print(sym+': gap down. Gap size: '+'{0:+.2f}'.format(cur_high - prev_low) + \
+            print(sym+': gap down. Gap size: '+ '{0:+.2f}%'.format((cur_high - prev_low)/prev_low * 100) + \
+            ' {0:+.2f}$'.format(cur_high - prev_low) + \
             ' ({0:+.2f}'.format(prev_low)+' -> '+ '{0:+.2f})'.format(cur_high))
 
     def rule_volume_breakout(self, sym):
@@ -149,7 +151,8 @@ class TA:
 
         week_volume = sum([float(x['Volume']) for x in self.full_history[sym][0:5]])
         prev4week_volume = (sum([float(x['Volume']) for x in self.full_history[sym][5:20+5]])) / (20 / 5)
-        if week_volume >= prev4week_volume * threshold:
+        # condition "len(msg) > 0" means: don't print weekly volume breakout unless there is a day volume breakout
+        if week_volume >= prev4week_volume * threshold and len(msg) > 0:
                 msg += ' cur-week volume up prev 4-week average by '+'{0:+.0f}%'.format((week_volume - prev4week_volume) * 100 / prev4week_volume)+'.'
 
         if len(msg) > 0:
@@ -184,7 +187,7 @@ class TA:
         print(tabulate(rows, headers))
 
     def loop(self):
-        sleep_time = 120
+        sleep_time = 300
         while True:
             try:
                 errmsg, market_stopped = self.get_latest()
