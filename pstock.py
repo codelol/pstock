@@ -39,6 +39,7 @@ class TA:
         self.interests_sma = [5, 10, 20]
         self.rules = [self.rule_sma_crossing,
                       self.rule_price_gaps,
+                      self.rule_price_range_enlarged,
                       self.rule_volume_breakout]
 
     def get_latest(self):
@@ -49,6 +50,7 @@ class TA:
             old_price = self.full_history[sym][0]['Close']
             # or Yahoo if Google is not available
             ydata = Share(sym)
+            self.full_history[sym][0]['Open'] = ydata.get_open()
             self.full_history[sym][0]['Close'] = ydata.get_price()
             self.full_history[sym][0]['Low']   = ydata.get_days_low()
             self.full_history[sym][0]['High']  = ydata.get_days_high()
@@ -139,6 +141,35 @@ class TA:
             print(sym+': gap down. Gap size: '+ '{0:+.2f}%'.format((cur_high - prev_low)/prev_low * 100) + \
             ' {0:+.2f}$'.format(cur_high - prev_low) + \
             ' ({0:+.2f}'.format(prev_low)+' -> '+ '{0:+.2f})'.format(cur_high))
+
+    def rule_price_range_enlarged(self, sym):
+        cur_low = float(self.full_history[sym][0]['Low'])
+        cur_high = float(self.full_history[sym][0]['High'])
+        prev_low = float(self.full_history[sym][1]['Low'])
+        prev_high = float(self.full_history[sym][1]['High'])
+
+        range_enlarged = (cur_high > prev_high and cur_low < prev_low);
+        if not range_enlarged:
+            return
+
+        cur_close = float(self.full_history[sym][0]['Close'])
+        cur_open = float(self.full_history[sym][0]['Open'])
+        prev_close = float(self.full_history[sym][1]['Close'])
+        prev_open = float(self.full_history[sym][1]['Open'])
+        prev_mid = (prev_close + prev_open) / 2
+
+        if cur_close > cur_open:
+            if cur_close > max(prev_close, prev_open):
+                print(sym+': price oscillation. Large possibility for reversal to UP trend.')
+            elif cur_close > prev_mid:
+                print(sym+': price oscillation. Some possibility for reversal to UP trend.')
+            return
+
+        if cur_close < cur_open:
+            if cur_close < min(prev_close, prev_open):
+                print(sym+': price oscillation. Large possibility for reversal to DOWN trend.')
+            elif cur_close < prev_mid:
+                print(sym+': price oscillation. Some possibility for reversal to DOWN trend.')
 
     def rule_volume_breakout(self, sym):
         msg = ''
