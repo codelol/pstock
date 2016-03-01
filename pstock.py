@@ -9,6 +9,9 @@ import time, sys, traceback
 def read_watchlist() :
     return [line.strip() for line in open("watchlist.txt", 'r')]
 
+def print_red(str):
+    print("\033[91m{}\033[0m".format(str))
+
 def get_all_history(symbols) :
     print('requesting history data')
     def get_latest_trading_day() :
@@ -160,14 +163,14 @@ class TA:
 
         if cur_close > cur_open:
             if cur_close > max(prev_close, prev_open):
-                print(sym+': price oscillation. Large possibility for reversal to UP trend.')
+                print_red(sym+': price oscillation. Large possibility for reversal to UP trend.')
             elif cur_close > prev_mid:
                 print(sym+': price oscillation. Some possibility for reversal to UP trend.')
             return
 
         if cur_close < cur_open:
             if cur_close < min(prev_close, prev_open):
-                print(sym+': price oscillation. Large possibility for reversal to DOWN trend.')
+                print_red(sym+': price oscillation. Large possibility for reversal to DOWN trend.')
             elif cur_close < prev_mid:
                 print(sym+': price oscillation. Some possibility for reversal to DOWN trend.')
 
