@@ -36,6 +36,7 @@ def get_all_history(symbols) :
 
 class TA:
     def __init__(self, watchlist, full_history):
+        self.market_stopped = False
         self.symbols = watchlist
         self.aggregates = {sym : {} for sym in watchlist}
         self.full_history = full_history
@@ -146,6 +147,9 @@ class TA:
             ' ({0:+.2f}'.format(prev_low)+' -> '+ '{0:+.2f})'.format(cur_high))
 
     def rule_price_range_enlarged(self, sym):
+        # If market is still trading, the current day's High and Low are not updated
+        if not self.market_stopped:
+            return
         cur_low = float(self.full_history[sym][0]['Low'])
         cur_high = float(self.full_history[sym][0]['High'])
         prev_low = float(self.full_history[sym][1]['Low'])
@@ -224,10 +228,10 @@ class TA:
         sleep_time = 300
         while True:
             try:
-                errmsg, market_stopped = self.get_latest()
+                errmsg, self.market_stopped = self.get_latest()
                 if len(errmsg) > 0:
                     print(errmsg)
-                if market_stopped:
+                if self.market_stopped:
                     print('Market is closed. Quit now.')
                     sleep_time = 0
                     return
