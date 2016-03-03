@@ -150,6 +150,7 @@ class TA:
         # If market is still trading, the current day's High and Low are not updated
         if not self.market_stopped:
             return
+
         cur_low = float(self.full_history[sym][0]['Low'])
         cur_high = float(self.full_history[sym][0]['High'])
         prev_low = float(self.full_history[sym][1]['Low'])
@@ -179,6 +180,10 @@ class TA:
                 print(sym+': price oscillation. Some possibility for reversal to DOWN trend.')
 
     def rule_volume_breakout(self, sym):
+        # If market is still trading, the current day's High and Low are not updated
+        if not self.market_stopped:
+            return
+
         msg = ''
         threshold = 1.15
         day_volume = float(self.full_history[sym][0]['Volume'])
