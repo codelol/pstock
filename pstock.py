@@ -54,12 +54,7 @@ class TA:
             old_price = self.full_history[sym][0]['Close']
             # or Yahoo if Google is not available
             ydata = Share(sym)
-            self.full_history[sym][0]['Open'] = ydata.get_open()
             self.full_history[sym][0]['Close'] = ydata.get_price()
-            self.full_history[sym][0]['Low']   = ydata.get_days_low()
-            self.full_history[sym][0]['High']  = ydata.get_days_high()
-            self.full_history[sym][0]['Volume']  = ydata.get_volume()
-
             try:
                 # use Google API for no-delay quotes if the service is available
                 self.full_history[sym][0]['Close'] = getQuotes(sym)[0]['LastTradePrice']
@@ -68,6 +63,10 @@ class TA:
 
             if old_price != self.full_history[sym][0]['Close']:
                 market_stopped = False
+                self.full_history[sym][0]['Open'] = ydata.get_open()
+                self.full_history[sym][0]['Low']   = ydata.get_days_low()
+                self.full_history[sym][0]['High']  = ydata.get_days_high()
+                self.full_history[sym][0]['Volume']  = ydata.get_volume()
 
         return errmsg, market_stopped
 
@@ -204,7 +203,11 @@ class TA:
     def run_rules(self):
         for sym in self.symbols:
             for rule in self.rules:
-                rule(sym)
+                try:
+                        rule(sym)
+                except Exception as err:
+                        print('Skipped one rule for '+sym)
+                        traceback.print_tb(err.__traceback__)
 
     def print_results(self):
         day1 = self.interests_sma[0]
@@ -236,15 +239,16 @@ class TA:
                 errmsg, self.market_stopped = self.get_latest()
                 if len(errmsg) > 0:
                     print(errmsg)
-                if self.market_stopped:
-                    print('Market is closed. Quit now.')
-                    sleep_time = 0
-                    return
 
                 self.calculations()
                 self.print_results()
                 self.run_rules()
                 print('============++++++++============')
+
+                if self.market_stopped:
+                    print('Market is closed. Quit now.')
+                    sleep_time = 0
+                    return
             except Exception as err:
                 traceback.print_tb(err.__traceback__)
                 print('Retrying in '+str(sleep_time)+' seconds...')
