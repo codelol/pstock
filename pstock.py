@@ -114,11 +114,16 @@ class TA:
 
         cur_price = float(self.full_history[sym][0]['Close'])
         pre_price = float(self.full_history[sym][1]['Close'])
-
         if cur_price > max(cur_sma1, cur_sma2, cur_sma3) and pre_price < min(pre_sma1, pre_sma2, pre_sma3):
-            print_red(sym+': crossing up all SMA lines.')
+            print_red(sym+': crossing up all SMA lines from yesterday to today.')
         elif cur_price < min(cur_sma1, cur_sma2, cur_sma3) and pre_price > max(pre_sma1, pre_sma2, pre_sma3):
-            print_red(sym+': crossing down all SMA lines.')
+            print_red(sym+': crossing down all SMA lines from yesterday to today.')
+
+        cur_open = float(self.full_history[sym][0]['Open'])
+        if cur_price > max(cur_sma1, cur_sma2, cur_sma3) and cur_open < min(cur_sma1, cur_sma2, cur_sma3):
+            print_red(sym+': crossing up all SMA lines from open to now.')
+        elif cur_price < min(cur_sma1, cur_sma2, cur_sma3) and cur_open > max(cur_sma1, cur_sma2, cur_sma3):
+            print_red(sym+': crossing down all SMA lines from open to now.')
 
     # If one SMA lines crosses another
     def rule_sma_crossing(self, sym):
@@ -209,7 +214,7 @@ class TA:
 
         if cur_close > cur_open:
             if cur_close > max(prev_close, prev_open):
-                print_red(sym+': price oscillation. Large possibility for reversal to UP trend.')
+                print(sym+': price oscillation. Large possibility for reversal to UP trend.')
             elif cur_close > prev_mid:
                 print(sym+': price oscillation. Some possibility for reversal to UP trend.')
             return
