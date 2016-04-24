@@ -41,7 +41,8 @@ class TA:
         self.aggregates = {sym : {} for sym in watchlist}
         self.full_history = full_history
         self.interests_sma = [5, 10, 20]
-        self.rules = [self.rule_breakthrough_sma,
+        self.rules = [self.rule_large_negative_followed_by_small_positive,
+                      self.rule_breakthrough_sma,
                       self.rule_sma_crossing,
                       self.rule_price_gaps,
                       self.rule_price_range_enlarged,
@@ -79,6 +80,20 @@ class TA:
 
     def calculations(self):
         self.cal_simple_moving_average()
+
+    def rule_large_negative_followed_by_small_positive(self, sym):
+        cur_open = float(self.full_history[sym][0]['Open'])
+        cur_close = float(self.full_history[sym][0]['Close'])
+        prev_open = float(self.full_history[sym][1]['Open'])
+        prev_close = float(self.full_history[sym][1]['Close'])
+
+        # previous day is negative, and current day is positive
+        if (prev_close < prev_open and cur_close > cur_open
+            # negative range is at least 1.5 times larger than positive
+            and abs(prev_close - prev_open) > 1.5 * abs(cur_close - cur_open)
+            # opening price of today is gapped down
+            and cur_open < prev_close):
+                print(sym+': 插入线，待入线，切入线 -- large negative day followed by small positive day')
 
     # If stock price has crossed multiple SMA lines
     def rule_breakthrough_sma(self, sym):
