@@ -86,11 +86,11 @@ class TA:
         cur_close = float(self.full_history[sym][0]['Close'])
         prev_open = float(self.full_history[sym][1]['Open'])
         prev_close = float(self.full_history[sym][1]['Close'])
-
+        all_sma = [self.aggregates[sym]['sma'+str(x)] for x in self.interests_sma]
         # previous day is negative, and current day is positive
         if (prev_close < prev_open and cur_close > cur_open
-            # current price must be at a low level, e.g., lowever than sma20
-            and cur_close < self.aggregates[sym]['sma'+str(self.interests_sma[2])]
+            # current price must be at a low level, e.g., sma5 < sma20
+            and all_sma[0] < all_sma[2]
             # negative range is at least 1.5 times larger than positive
             and abs(prev_close - prev_open) > 1.5 * abs(cur_close - cur_open)
             # opening price of today is gapped down
