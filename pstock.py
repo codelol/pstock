@@ -89,6 +89,8 @@ class TA:
 
         # previous day is negative, and current day is positive
         if (prev_close < prev_open and cur_close > cur_open
+            # current price must be at a low level, e.g., lowever than sma20
+            and cur_close < self.aggregates[sym]['sma'+str(self.interests_sma[2])]
             # negative range is at least 1.5 times larger than positive
             and abs(prev_close - prev_open) > 1.5 * abs(cur_close - cur_open)
             # opening price of today is gapped down
