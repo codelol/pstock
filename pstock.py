@@ -41,7 +41,8 @@ class TA:
         self.aggregates = {sym : {} for sym in watchlist}
         self.full_history = full_history
         self.interests_sma = [5, 10, 20]
-        self.rules = [self.rule_sma_crossing,
+        self.rules = [self.rule_breakthrough_sma,
+                      self.rule_sma_crossing,
                       self.rule_price_gaps,
                       self.rule_price_range_enlarged,
                       self.rule_volume_breakout]
@@ -79,6 +80,30 @@ class TA:
     def calculations(self):
         self.cal_simple_moving_average()
 
+    # If stock price has crossed multiple SMA lines
+    def rule_breakthrough_sma(self, sym):
+        day1 = self.interests_sma[0]
+        day2 = self.interests_sma[1]
+        day3 = self.interests_sma[2]
+
+        cur_sma1 = self.aggregates[sym]['sma'+str(day1)]
+        pre_sma1 = self.aggregates[sym]['sma'+str(day1)+'_prev']
+
+        cur_sma2 = self.aggregates[sym]['sma'+str(day2)]
+        pre_sma2 = self.aggregates[sym]['sma'+str(day2)+'_prev']
+
+        cur_sma3 = self.aggregates[sym]['sma'+str(day3)]
+        pre_sma3 = self.aggregates[sym]['sma'+str(day3)+'_prev']
+
+        cur_price = float(self.full_history[sym][0]['Close'])
+        pre_price = float(self.full_history[sym][1]['Close'])
+
+        if cur_price > max(cur_sma1, cur_sma2, cur_sma3) and pre_price < min(pre_sma1, pre_sma2, pre_sma3):
+            print_red(sym+': crossing up all SMA lines.')
+        elif cur_price < min(cur_sma1, cur_sma2, cur_sma3) and pre_price > max(pre_sma1, pre_sma2, pre_sma3):
+            print_red(sym+': crossing down all SMA lines.')
+
+    # If one SMA lines crosses another
     def rule_sma_crossing(self, sym):
         day1 = self.interests_sma[0]
         day2 = self.interests_sma[1]
