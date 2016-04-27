@@ -45,7 +45,7 @@ class TA:
                       self.rule_breakthrough_sma,
                       self.rule_sma_crossing,
                       self.rule_price_gaps,
-                      self.rule_price_range_enlarged,
+                      self.rule_price_range_compare,
                       self.rule_volume_breakout]
 
     def get_latest(self):
@@ -192,38 +192,53 @@ class TA:
             ' {0:+.2f}$'.format(cur_high - prev_low) + \
             ' ({0:+.2f}'.format(prev_low)+' -> '+ '{0:+.2f})'.format(cur_high))
 
-    def rule_price_range_enlarged(self, sym):
-        # If market is still trading, the current day's High and Low are not updated
-        if not self.market_stopped:
-            return
-
+    def rule_price_range_compare(self, sym):
         cur_low = float(self.full_history[sym][0]['Low'])
         cur_high = float(self.full_history[sym][0]['High'])
         prev_low = float(self.full_history[sym][1]['Low'])
         prev_high = float(self.full_history[sym][1]['High'])
 
-        range_enlarged = (cur_high > prev_high and cur_low < prev_low);
-        if not range_enlarged:
-            return
+        cur_range_total = abs(cur_low - cur_high)
+        prev_range_total = abs(prev_low - prev_high)
 
         cur_close = float(self.full_history[sym][0]['Close'])
         cur_open = float(self.full_history[sym][0]['Open'])
         prev_close = float(self.full_history[sym][1]['Close'])
         prev_open = float(self.full_history[sym][1]['Open'])
-        prev_mid = (prev_close + prev_open) / 2
 
-        if cur_close > cur_open:
-            if cur_close > max(prev_close, prev_open):
-                print(sym+': price oscillation. Large possibility for reversal to UP trend.')
-            elif cur_close > prev_mid:
-                print(sym+': price oscillation. Some possibility for reversal to UP trend.')
+        cur_range_body = abs(cur_close - cur_open)
+        prev_range_body = abs(prev_close - prev_open)
+
+        if ((round(cur_range_total, 2) == 0 and round(prev_range_total, 2) == 0) or
+            (round(cur_range_body, 2) == 0 and round(prev_range_body, 2) == 0)):
+            print('price range is not valid')
             return
 
-        if cur_close < cur_open:
-            if cur_close < min(prev_close, prev_open):
-                print_red(sym+': price oscillation. Large possibility for reversal to DOWN trend.')
-            elif cur_close < prev_mid:
-                print(sym+': price oscillation. Some possibility for reversal to DOWN trend.')
+        if (cur_range_total > prev_range_total + 0.001 and
+            cur_low < prev_low and cur_high > prev_high) :
+            print(sym+': cur-day Total price range larger than that of yesterday. ' +
+                  '({0:.2f}'.format(prev_low) +', '+ '{0:.2f})'.format(prev_high) + ' -> ' +
+                  '({0:.2f}'.format(cur_low) +', '+ '{0:.2f})'.format(cur_high))
+
+        if (cur_range_body > prev_range_body + 0.001 and
+            min(cur_open, cur_close) < min(prev_open, prev_close) and
+            max(cur_open, cur_close) > max(prev_open, prev_close)) :
+            print(sym+': cur-day Body price range larger than that of yesterday' +
+                  '({0:.2f}'.format(prev_open) +', '+ '{0:.2f})'.format(prev_close) + ' -> ' +
+                  '({0:.2f}'.format(cur_open) +', '+ '{0:.2f})'.format(cur_close))
+
+        if (cur_range_total < prev_range_total - 0.001 and
+            cur_low > prev_low and cur_high < prev_high) :
+            print(sym+': cur-day Total price range smaller than that of yesterday' +
+                  '({0:.2f}'.format(prev_low) +', '+ '{0:.2f})'.format(prev_high) + ' -> ' +
+                  '({0:.2f}'.format(cur_low) +','+ '{0:.2f})'.format(cur_high))
+
+        if (cur_range_body < prev_range_body - 0.001 and
+            min(cur_open, cur_close) > min(prev_open, prev_close) and
+            max(cur_open, cur_close) < max(prev_open, prev_close)) :
+            print(sym+': cur-day body price range smaller than that of yesterday' +
+                  '({0:.2f}'.format(prev_open) +', '+ '{0:.2f})'.format(prev_close) + ' -> ' +
+                  '({0:.2f}'.format(cur_open) +', '+ '{0:.2f})'.format(cur_close))
 
     def rule_volume_breakout(self, sym):
         # If market is still trading, the current day's High and Low are not updated
