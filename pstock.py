@@ -35,8 +35,9 @@ def get_all_history(symbols) :
     return ret
 
 class TA:
-    def __init__(self, watchlist, full_history):
+    def __init__(self, watchlist, full_history, verbose):
         self.market_stopped = False
+        self.verbose = verbose
         self.symbols = watchlist
         self.aggregates = {sym : {} for sym in watchlist}
         self.full_history = full_history
@@ -263,13 +264,19 @@ class TA:
             print(sym+':'+msg)
 
     def run_rules(self):
+        skipped = False
         for sym in self.symbols:
             for rule in self.rules:
                 try:
-                        rule(sym)
+                    rule(sym)
                 except Exception as err:
+                    if self.verbose:
                         print('Skipped one rule for '+sym)
                         traceback.print_tb(err.__traceback__)
+                    else:
+                        skipped = True
+        if skipped:
+            print('-- Some rules are skipped. Turn on verbose to see details. --')
 
     def print_results(self):
         day1 = self.interests_sma[0]
@@ -332,7 +339,7 @@ def main() :
             print('Retrying in '+str(sleep_time)+' seconds...')
             time.sleep(sleep_time)
 
-    ta = TA(watchlist, full_history)
+    ta = TA(watchlist, full_history, False)
     ta.loop()
 
 if __name__ == '__main__' :
