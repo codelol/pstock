@@ -4,7 +4,7 @@ from yahoo_finance import Share
 from googlefinance import getQuotes
 from tabulate import tabulate
 from datetime import datetime, timedelta
-import time, sys, traceback
+import time, sys, argparse, traceback
 
 def read_watchlist() :
     return [line.strip() for line in open("watchlist.txt", 'r')]
@@ -324,7 +324,17 @@ class TA:
             finally:
                 time.sleep(sleep_time)
 
+def arg_parser():
+    parser = argparse.ArgumentParser(description='pstock stock analysis tool in python')
+    parser.add_argument('-v', dest='verbose', action='store_true', default=False,
+                            help='specify verbose exception information')
+    args = parser.parse_args()
+    return args;
+
 def main() :
+    args = arg_parser()
+    print('verbose? '+str(args.verbose))
+
     watchlist = read_watchlist()
     print(watchlist)
 
@@ -339,7 +349,7 @@ def main() :
             print('Retrying in '+str(sleep_time)+' seconds...')
             time.sleep(sleep_time)
 
-    ta = TA(watchlist, full_history, False)
+    ta = TA(watchlist, full_history, args.verbose)
     ta.loop()
 
 if __name__ == '__main__' :
