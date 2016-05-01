@@ -6,14 +6,23 @@ from tabulate import tabulate
 from datetime import datetime, timedelta
 import time, sys, argparse, traceback
 
+def arg_parser():
+    parser = argparse.ArgumentParser(description='pstock stock analysis tool in python')
+    parser.add_argument('-v', dest='verbose', action='store_true', default=False,
+                            help='specify verbose exception information')
+    parser.add_argument('-w', dest='weekly_mode', action='store_true', default=False,
+                            help='analyze weekly charts instead of daily charts')
+    args = parser.parse_args()
+    return args;
+
 def read_watchlist() :
     return [line.strip() for line in open("watchlist.txt", 'r')]
 
 def print_red(str):
     print("\033[91m{}\033[0m".format(str))
 
-def get_all_history(symbols) :
-    print('requesting history data')
+def get_all_history(symbols, history_days) :
+    print('requesting history data of '+str(history_days)+' days')
     def get_latest_trading_day() :
         # return today if it is a trading day, otherwise return the most recent one
         today = datetime.today()
@@ -25,7 +34,7 @@ def get_all_history(symbols) :
 
     latest_trading_day = get_latest_trading_day()
 
-    history_starting_day = latest_trading_day - timedelta(days = 40)
+    history_starting_day = latest_trading_day - timedelta(days = int(history_days))
     history_ending_day = latest_trading_day - timedelta(days = 1)
     start = history_starting_day.date().isoformat()
     end   = history_ending_day.date().isoformat()
@@ -35,12 +44,15 @@ def get_all_history(symbols) :
     return ret
 
 class TA:
-    def __init__(self, watchlist, full_history, verbose):
+    def __init__(self, watchlist, full_history, verbose, weekly_mode):
         self.market_stopped = False
-        self.verbose = verbose
         self.symbols = watchlist
+        self.verbose = verbose
+        self.weekly_mode = weekly_mode
+        self.tu = 'week' if weekly_mode else 'day'
         self.aggregates = {sym : {} for sym in watchlist}
         self.full_history = full_history
+        self.stashed_daily_history = full_history
         self.interests_sma = [5, 10, 20]
         self.rules = [self.rule_large_negative_followed_by_small_positive,
                       self.rule_breakthrough_sma,
@@ -53,6 +65,12 @@ class TA:
         print('Requesting latest info: ' + datetime.now().isoformat())
         errmsg = ''
         market_stopped = True
+
+        # if using weekly_mode, full_history is 'weekly' price during analysis, but when fetching prices
+        # let's restore it into daily price history
+        if self.weekly_mode:
+            self.full_history = self.stashed_daily_history
+
         for sym in self.symbols :
             old_price = self.full_history[sym][0]['Close']
             # or Yahoo if Google is not available
@@ -72,6 +90,25 @@ class TA:
                 self.full_history[sym][0]['Volume']  = ydata.get_volume()
 
         return errmsg, market_stopped
+
+    def convert_into_weekly_prices(self):
+        self.stashed_daily_history = self.full_history
+        tmp_history = {}
+        for sym in self.symbols :
+            tmp_history[sym] = []
+            # analyze 20 weeks (100 trading days) at most
+            for i in range(20):
+                price_dict = {}
+                price_dict['Open'] = self.full_history[sym][i * 5 + 4]['Open']
+                price_dict['Close'] = self.full_history[sym][i * 5]['Close']
+                price_dict['High'] = str(max([float(x['High']) for x in self.full_history[sym][(i*5):(i*5+5)]]))
+                price_dict['Low'] = str(min([float(x['Low']) for x in self.full_history[sym][(i*5):(i*5+5)]]))
+                price_dict['Volume'] = str(min([float(x['Volume']) for x in self.full_history[sym][(i*5):(i*5+5)]]))
+                tmp_history[sym] = tmp_history[sym] + [price_dict]
+
+        # now self.full_history should be a weekly prices
+        self.full_history = tmp_history
+        print('Converted daily prices into weekly prices')
 
     def cal_simple_moving_average(self) :
         for sym in self.symbols :
@@ -96,7 +133,7 @@ class TA:
             and abs(prev_close - prev_open) > 1.5 * abs(cur_close - cur_open)
             # opening price of today is gapped down
             and cur_open < prev_close):
-                print(sym+': 插入线，待入线，切入线 -- large negative day followed by small positive day')
+                print(sym+': 插入线，待入线，切入线 -- large negative followed by small positive')
 
     # If stock price has crossed multiple SMA lines
     def rule_breakthrough_sma(self, sym):
@@ -116,9 +153,9 @@ class TA:
         cur_price = float(self.full_history[sym][0]['Close'])
         pre_price = float(self.full_history[sym][1]['Close'])
         if cur_price > max(cur_sma1, cur_sma2, cur_sma3) and pre_price < min(pre_sma1, pre_sma2, pre_sma3):
-            print_red(sym+': crossing up all SMA lines from yesterday to today.')
+            print_red(sym+': crossing up all SMA lines from previous to current.')
         elif cur_price < min(cur_sma1, cur_sma2, cur_sma3) and pre_price > max(pre_sma1, pre_sma2, pre_sma3):
-            print_red(sym+': crossing down all SMA lines from yesterday to today.')
+            print_red(sym+': crossing down all SMA lines from previous to current.')
 
         cur_open = float(self.full_history[sym][0]['Open'])
         if cur_price > max(cur_sma1, cur_sma2, cur_sma3) and cur_open < min(cur_sma1, cur_sma2, cur_sma3):
@@ -217,27 +254,27 @@ class TA:
 
         if (cur_range_total > prev_range_total + 0.001 and
             cur_low < prev_low and cur_high > prev_high) :
-            print(sym+': cur-day Total price range larger than that of yesterday. ' +
+            print(sym+': cur-' + self.tu + ' Total price range larger than previous ' +
                   '({0:.2f}'.format(prev_low) +', '+ '{0:.2f})'.format(prev_high) + ' -> ' +
                   '({0:.2f}'.format(cur_low) +', '+ '{0:.2f})'.format(cur_high))
 
         if (cur_range_body > prev_range_body + 0.001 and
             min(cur_open, cur_close) < min(prev_open, prev_close) and
             max(cur_open, cur_close) > max(prev_open, prev_close)) :
-            print(sym+': cur-day Body price range larger than that of yesterday' +
+            print(sym+': cur-' + self.tu + ' Body price range larger than previous ' +
                   '({0:.2f}'.format(prev_open) +', '+ '{0:.2f})'.format(prev_close) + ' -> ' +
                   '({0:.2f}'.format(cur_open) +', '+ '{0:.2f})'.format(cur_close))
 
         if (cur_range_total < prev_range_total - 0.001 and
             cur_low > prev_low and cur_high < prev_high) :
-            print(sym+': cur-day Total price range smaller than that of yesterday' +
+            print(sym+': cur-' + self.tu + ' Total price range smaller than previous ' +
                   '({0:.2f}'.format(prev_low) +', '+ '{0:.2f})'.format(prev_high) + ' -> ' +
                   '({0:.2f}'.format(cur_low) +','+ '{0:.2f})'.format(cur_high))
 
         if (cur_range_body < prev_range_body - 0.001 and
             min(cur_open, cur_close) > min(prev_open, prev_close) and
             max(cur_open, cur_close) < max(prev_open, prev_close)) :
-            print(sym+': cur-day body price range smaller than that of yesterday' +
+            print(sym+': cur-' + self.tu + ' body price range smaller than previous ' +
                   '({0:.2f}'.format(prev_open) +', '+ '{0:.2f})'.format(prev_close) + ' -> ' +
                   '({0:.2f}'.format(cur_open) +', '+ '{0:.2f})'.format(cur_close))
 
@@ -252,13 +289,8 @@ class TA:
         for days in [5, 10]:
             avgtmp = sum([float(x['Volume']) for x in self.full_history[sym][1:days+1]]) / days
             if day_volume >= avgtmp * threshold :
-                msg += ' cur-day volume up prev '+str(days)+'-day average by '+'{0:+.0f}%'.format((day_volume - avgtmp) * 100 / avgtmp)+'.'
-
-        week_volume = sum([float(x['Volume']) for x in self.full_history[sym][0:5]])
-        prev4week_volume = (sum([float(x['Volume']) for x in self.full_history[sym][5:20+5]])) / (20 / 5)
-        # condition "len(msg) > 0" means: don't print weekly volume breakout unless there is a day volume breakout
-        if week_volume >= prev4week_volume * threshold and len(msg) > 0:
-                msg += ' cur-week volume up prev 4-week average by '+'{0:+.0f}%'.format((week_volume - prev4week_volume) * 100 / prev4week_volume)+'.'
+                msg += ' cur-' + self.tu + ' volume up prev '+str(days)+'-' + self.tu + ' average by '+\
+                       '{0:+.0f}%'.format((day_volume - avgtmp) * 100 / avgtmp)+'.'
 
         if len(msg) > 0:
             print(sym+':'+msg)
@@ -308,7 +340,8 @@ class TA:
                 errmsg, self.market_stopped = self.get_latest()
                 if len(errmsg) > 0:
                     print(errmsg)
-
+                if self.weekly_mode:
+                    self.convert_into_weekly_prices()
                 self.calculations()
                 self.print_results()
                 self.run_rules()
@@ -324,16 +357,8 @@ class TA:
             finally:
                 time.sleep(sleep_time)
 
-def arg_parser():
-    parser = argparse.ArgumentParser(description='pstock stock analysis tool in python')
-    parser.add_argument('-v', dest='verbose', action='store_true', default=False,
-                            help='specify verbose exception information')
-    args = parser.parse_args()
-    return args;
-
 def main() :
     args = arg_parser()
-    print('verbose? '+str(args.verbose))
 
     watchlist = read_watchlist()
     print(watchlist)
@@ -341,7 +366,8 @@ def main() :
     # put history info into full_history
     while True:
         try:
-            full_history = get_all_history(watchlist)
+            history_days = 200 if args.weekly_mode else 40
+            full_history = get_all_history(watchlist, history_days)
             break
         except:
             sleep_time = 60
@@ -349,7 +375,7 @@ def main() :
             print('Retrying in '+str(sleep_time)+' seconds...')
             time.sleep(sleep_time)
 
-    ta = TA(watchlist, full_history, args.verbose)
+    ta = TA(watchlist, full_history, args.verbose, args.weekly_mode)
     ta.loop()
 
 if __name__ == '__main__' :
