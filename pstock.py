@@ -249,7 +249,20 @@ class TA:
 
         if ((round(cur_range_total, 2) == 0 and round(prev_range_total, 2) == 0) or
             (round(cur_range_body, 2) == 0 and round(prev_range_body, 2) == 0)):
-            print('price range is not valid')
+            print(sym+': price range is not valid')
+            return
+
+        time1 = self.interests_sma[0]
+        time2 = self.interests_sma[1]
+        time3 = self.interests_sma[2]
+        cur_sma1 = self.aggregates[sym]['sma'+str(time1)]
+        cur_sma2 = self.aggregates[sym]['sma'+str(time2)]
+        cur_sma3 = self.aggregates[sym]['sma'+str(time3)]
+        price_at_low_level = (cur_close < cur_sma1 and cur_close < cur_sma2 and cur_close < cur_sma3)
+        price_at_high_level = (cur_close > cur_sma1 and cur_close > cur_sma2 and cur_close > cur_sma3)
+
+        # following patterns only make sense if price is either at low level or high level
+        if price_at_low_level == False and price_at_high_level == False:
             return
 
         if (cur_range_total > prev_range_total + 0.001 and
