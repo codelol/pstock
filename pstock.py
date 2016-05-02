@@ -258,10 +258,11 @@ class TA:
         cur_sma1 = self.aggregates[sym]['sma'+str(time1)]
         cur_sma2 = self.aggregates[sym]['sma'+str(time2)]
         cur_sma3 = self.aggregates[sym]['sma'+str(time3)]
-        price_at_low_level = (cur_close < cur_sma1 and cur_close < cur_sma2 and cur_close < cur_sma3)
-        price_at_high_level = (cur_close > cur_sma1 and cur_close > cur_sma2 and cur_close > cur_sma3)
-
         # following patterns only make sense if price is either at low level or high level
+        # price_at_low_level may be a buy point, make sure it's a very good one (bargain price)
+        # price_at_high_level may be a sell point, must check carefully
+        price_at_low_level = (cur_close < cur_sma1 and cur_close < cur_sma2 and cur_close < cur_sma3)
+        price_at_high_level = (cur_close > cur_sma1)
         if price_at_low_level == False and price_at_high_level == False:
             return
 
