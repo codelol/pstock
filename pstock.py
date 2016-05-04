@@ -54,7 +54,8 @@ class TA:
         self.full_history = full_history
         self.stashed_daily_history = full_history
         self.interests_sma = [5, 10, 20]
-        self.rules = [self.rule_large_negative_followed_by_small_positive,
+        self.rules = [self.rule_double_needle_bottom,
+                      self.rule_large_negative_followed_by_small_positive,
                       self.rule_breakthrough_sma,
                       self.rule_sma_crossing,
                       self.rule_price_gaps,
@@ -118,6 +119,33 @@ class TA:
 
     def calculations(self):
         self.cal_simple_moving_average()
+
+    def rule_double_needle_bottom(self, sym):
+        cur_close = float(self.full_history[sym][0]['Close'])
+        cur_sma1 = self.aggregates[sym]['sma'+str(self.interests_sma[0])]
+        cur_sma2 = self.aggregates[sym]['sma'+str(self.interests_sma[1])]
+        cur_sma3 = self.aggregates[sym]['sma'+str(self.interests_sma[2])]
+
+        # if price is not at a low level, don't bother
+        if cur_close > min(cur_sma1, cur_sma2, cur_sma3):
+            return
+
+        cur_open = float(self.full_history[sym][0]['Open'])
+        cur_low  = float(self.full_history[sym][0]['Low'])
+        body_size = abs(cur_open - cur_close)
+        lower_needle_size = min(cur_open, cur_close) - cur_low
+
+        # if the lower_needle_size is not large enough, don't bother
+        if lower_needle_size < body_size * 2:
+            return
+
+        # now let's look for if we have double bottoms recently
+        days_to_check = 10
+        for i in range(1, days_to_check):
+            tmp_low = float(self.full_history[sym][i]['Low'])
+            if abs(tmp_low - cur_low) < cur_close * 0.002:
+                print_red(sym + ': double needle bottom')
+                return
 
     def rule_large_negative_followed_by_small_positive(self, sym):
         cur_open = float(self.full_history[sym][0]['Open'])
