@@ -143,6 +143,12 @@ class TA:
         days_to_check = 10
         for i in range(1, days_to_check):
             tmp_low = float(self.full_history[sym][i]['Low'])
+            if (cur_low - tmp_low) > cur_close * 0.002:
+                # there was a lower bottom previously, so today is not bottom
+                return
+
+        for i in range(1, days_to_check):
+            tmp_low = float(self.full_history[sym][i]['Low'])
             if abs(tmp_low - cur_low) < cur_close * 0.002:
                 print_red(sym + ': double needle bottom')
                 return
