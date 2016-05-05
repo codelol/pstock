@@ -305,6 +305,14 @@ class TA:
             print(sym+': cur-' + self.tu + ' Total price range larger than previous ' +
                   '({0:.2f}'.format(prev_low) +', '+ '{0:.2f})'.format(prev_high) + ' -> ' +
                   '({0:.2f}'.format(cur_low) +', '+ '{0:.2f})'.format(cur_high))
+            return #when total range is something, skip body range
+
+        if (cur_range_total < prev_range_total - 0.001 and
+            cur_low > prev_low and cur_high < prev_high) :
+            print(sym+': cur-' + self.tu + ' Total price range smaller than previous ' +
+                  '({0:.2f}'.format(prev_low) +', '+ '{0:.2f})'.format(prev_high) + ' -> ' +
+                  '({0:.2f}'.format(cur_low) +','+ '{0:.2f})'.format(cur_high))
+            return #when total range is something, skip body range
 
         if (cur_range_body > prev_range_body + 0.001 and
             min(cur_open, cur_close) < min(prev_open, prev_close) and
@@ -312,12 +320,6 @@ class TA:
             print(sym+': cur-' + self.tu + ' Body price range larger than previous ' +
                   '({0:.2f}'.format(prev_open) +', '+ '{0:.2f})'.format(prev_close) + ' -> ' +
                   '({0:.2f}'.format(cur_open) +', '+ '{0:.2f})'.format(cur_close))
-
-        if (cur_range_total < prev_range_total - 0.001 and
-            cur_low > prev_low and cur_high < prev_high) :
-            print(sym+': cur-' + self.tu + ' Total price range smaller than previous ' +
-                  '({0:.2f}'.format(prev_low) +', '+ '{0:.2f})'.format(prev_high) + ' -> ' +
-                  '({0:.2f}'.format(cur_low) +','+ '{0:.2f})'.format(cur_high))
 
         if (cur_range_body < prev_range_body - 0.001 and
             min(cur_open, cur_close) > min(prev_open, prev_close) and
