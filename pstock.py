@@ -225,17 +225,6 @@ class TA:
             else:
                 msg += ' sma'+str(day1) + ' and sma'+str(day2) + ' are both 0.'
 
-        cur_sma1_minus_cur_sma3 = cur_sma1 - cur_sma3
-        pre_sma1_minus_pre_sma3 = pre_sma1 - pre_sma3
-
-        if (cur_sma1_minus_cur_sma3 * pre_sma1_minus_pre_sma3) <= 0:
-            if cur_sma1_minus_cur_sma3 > pre_sma1_minus_pre_sma3:
-                msg += ' sma'+str(day1) + ' crossing up sma'+str(day3)+'.'
-            elif cur_sma1_minus_cur_sma3 < pre_sma1_minus_pre_sma3:
-                msg += ' sma'+str(day1) + ' crossing down sma'+str(day3)+'.'
-            else:
-                msg += ' sma'+str(day1) + ' and sma'+str(day3) + ' are both 0'
-
         cur_sma2_minus_cur_sma3 = cur_sma2 - cur_sma3
         pre_sma2_minus_pre_sma3 = pre_sma2 - pre_sma3
 
@@ -376,7 +365,6 @@ class TA:
         day3 = self.interests_sma[2]
         headers = ['Symbol', 'Price', 'Change%', 'Change',
                    'sma('+str(day1)+' - '+str(day2)+')',
-                   'sma('+str(day1)+' - '+str(day3)+')',
                    'sma('+str(day2)+' - '+str(day3)+')',
                    ]
         rows = []
@@ -388,7 +376,6 @@ class TA:
             r.append('{0:+.2f}'.format(price_change * 100 / float(self.full_history[sym][1]['Close'])))
             r.append('{0:+.2f}'.format(price_change))
             r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day1)]) - float(self.aggregates[sym]['sma'+str(day2)])))
-            r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day1)]) - float(self.aggregates[sym]['sma'+str(day3)])))
             r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day2)]) - float(self.aggregates[sym]['sma'+str(day3)])))
             rows.append(r)
         print(tabulate(rows, headers))
