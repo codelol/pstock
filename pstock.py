@@ -54,6 +54,9 @@ class TA:
         self.full_history = full_history
         self.stashed_daily_history = full_history
         self.interests_sma = [5, 10, 20]
+        self.buy_signals =   '============ Buy Signals ============'
+        self.sell_signals =  '=========== Sell Signals ============'
+        self.other_signals = '========== Other Signals ============'
         self.rules = [self.rule_double_needle_bottom,
                       self.rule_large_negative_followed_by_small_positive,
                       self.rule_breakthrough_sma,
@@ -168,7 +171,7 @@ class TA:
             and abs(prev_close - prev_open) > 1.5 * abs(cur_close - cur_open)
             # opening price of today is gapped down
             and cur_open < prev_close):
-                print(sym+': 插入线，待入线，切入线')
+                self.buy_signals += '\n' + sym + ': 插入线，待入线，切入线'
 
     # If stock price has crossed multiple SMA lines
     def rule_breakthrough_sma(self, sym):
@@ -216,28 +219,24 @@ class TA:
         cur_sma1_minus_cur_sma2 = cur_sma1 - cur_sma2
         pre_sma1_minus_pre_sma2 = pre_sma1 - pre_sma2
 
-        msg = ''
         if (cur_sma1_minus_cur_sma2 * pre_sma1_minus_pre_sma2) <= 0:
             if cur_sma1_minus_cur_sma2 > pre_sma1_minus_pre_sma2:
-                msg += ' sma'+str(day1) + ' crossing up sma'+str(day2)+'.'
+                self.buy_signals += '\n' + sym + ': sma'+str(day1) + ' crossing up sma'+str(day2)+'.'
             elif cur_sma1_minus_cur_sma2 < pre_sma1_minus_pre_sma2:
-                msg += ' sma'+str(day1) + ' crossing down sma'+str(day2)+'.'
+                self.sell_signals += '\n' + sym + ': sma'+str(day1) + ' crossing down sma'+str(day2)+'.'
             else:
-                msg += ' sma'+str(day1) + ' and sma'+str(day2) + ' are both 0.'
+                pass
 
         cur_sma2_minus_cur_sma3 = cur_sma2 - cur_sma3
         pre_sma2_minus_pre_sma3 = pre_sma2 - pre_sma3
 
         if (cur_sma2_minus_cur_sma3 * pre_sma2_minus_pre_sma3) <= 0:
             if cur_sma2_minus_cur_sma3 > pre_sma2_minus_pre_sma3:
-                msg += ' sma'+str(day2) + ' crossing up sma'+str(day3)+'.'
+                self.buy_signals += '\n' + sym + ': sma'+str(day2) + ' crossing up sma'+str(day3)+'.'
             elif cur_sma2_minus_cur_sma3 < pre_sma2_minus_pre_sma3:
-                msg += ' sma'+str(day2) + ' crossing down sma'+str(day3)+'.'
+                self.sell_signals += '\n' + sym + ': sma'+str(day2) + ' crossing down sma'+str(day3)+'.'
             else:
-                msg += ' sma'+str(day2) + ' and sma'+str(day3) + ' are both 0.'
-
-        if len(msg) > 0:
-            print(sym+':'+msg)
+                pass
 
     def rule_price_new_high(self, sym):
         # in weekly_mode, detect 10-week new high; if in daily mode, 20-day new high
@@ -246,7 +245,7 @@ class TA:
         for i in range(1, new_high_threshold):
             if cur_price < float(self.full_history[sym][i]['High']):
                 return
-        print(sym+': '+str(new_high_threshold)+'-'+self.tu+' new high!')
+        self.buy_signals += '\n' + sym+': '+str(new_high_threshold)+'-'+self.tu+' new high!'
 
     def rule_price_gaps(self, sym):
         cur_low = float(self.full_history[sym][0]['Low'])
@@ -255,13 +254,15 @@ class TA:
         prev_high = float(self.full_history[sym][1]['High'])
 
         if cur_low > prev_high:
-            print(sym+': gap up. Gap size: ' + '{0:+.2f}%'.format((cur_low - prev_high)/prev_high * 100) + \
-            ' {0:+.2f}$'.format(cur_low - prev_high) + \
-            ' ({0:+.2f}'.format(prev_high)+' -> '+ '{0:+.2f})'.format(cur_low))
+            self.buy_signals += '\n'+sym+': gap up. Gap size: ' + \
+                                '{0:+.2f}%'.format((cur_low - prev_high)/prev_high * 100) + \
+                                ' {0:+.2f}$'.format(cur_low - prev_high) + \
+                                ' ({0:+.2f}'.format(prev_high)+' -> '+ '{0:+.2f})'.format(cur_low)
         if cur_high < prev_low:
-            print(sym+': gap down. Gap size: '+ '{0:+.2f}%'.format((cur_high - prev_low)/prev_low * 100) + \
-            ' {0:+.2f}$'.format(cur_high - prev_low) + \
-            ' ({0:+.2f}'.format(prev_low)+' -> '+ '{0:+.2f})'.format(cur_high))
+            self.sell_signals += '\n'+sym+': gap down. Gap size: '+ \
+                                 '{0:+.2f}%'.format((cur_high - prev_low)/prev_low * 100) + \
+                                 ' {0:+.2f}$'.format(cur_high - prev_low) + \
+                                 ' ({0:+.2f}'.format(prev_low)+' -> '+ '{0:+.2f})'.format(cur_high)
 
     def rule_price_range_compare(self, sym):
         cur_low = float(self.full_history[sym][0]['Low'])
@@ -301,23 +302,23 @@ class TA:
 
         if (cur_range_total > prev_range_total + 0.001 and
             cur_low < prev_low and cur_high > prev_high) :
-            print(sym+': total price range larger than previous')
+            self.other_signals += '\n' + sym+': total price range larger than previous'
             return #when total range is something, skip body range
 
         if (cur_range_total < prev_range_total - 0.001 and
             cur_low > prev_low and cur_high < prev_high) :
-            print(sym+': total price range smaller than previous')
+            self.other_signals += '\n' + sym+': total price range smaller than previous'
             return #when total range is something, skip body range
 
         if (cur_range_body > prev_range_body + 0.001 and
             min(cur_open, cur_close) < min(prev_open, prev_close) and
             max(cur_open, cur_close) > max(prev_open, prev_close)) :
-            print(sym+': body price range larger than previous')
+            self.other_signals += '\n' + sym+': body price range larger than previous'
 
         if (cur_range_body < prev_range_body - 0.001 and
             min(cur_open, cur_close) > min(prev_open, prev_close) and
             max(cur_open, cur_close) < max(prev_open, prev_close)) :
-            print(sym+': body price range smaller than previous')
+            self.other_signals += '\n' + sym+': body price range smaller than previous'
 
     def rule_volume_breakout(self, sym):
         # If market is still trading, the current day's High and Low are not updated
@@ -384,6 +385,9 @@ class TA:
                 self.calculations()
                 self.print_results()
                 self.run_rules()
+                print(self.buy_signals)
+                print(self.sell_signals)
+                print(self.other_signals)
                 print('============++++++++============')
 
                 if self.market_stopped:
