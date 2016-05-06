@@ -58,6 +58,7 @@ class TA:
                       self.rule_large_negative_followed_by_small_positive,
                       self.rule_breakthrough_sma,
                       self.rule_sma_crossing,
+                      self.rule_price_new_high,
                       self.rule_price_gaps,
                       self.rule_price_range_compare,
                       self.rule_volume_breakout]
@@ -248,6 +249,15 @@ class TA:
 
         if len(msg) > 0:
             print(sym+':'+msg)
+
+    def rule_price_new_high(self, sym):
+        # in weekly_mode, detect 10-week new high; if in daily mode, 20-day new high
+        new_high_threshold = 10 if self.weekly_mode else 20
+        cur_price = float(self.full_history[sym][0]['Close'])
+        for i in range(1, new_high_threshold):
+            if cur_price < float(self.full_history[sym][i]['High']):
+                return
+        print(sym+': '+str(new_high_threshold)+'-'+self.tu+' new high!')
 
     def rule_price_gaps(self, sym):
         cur_low = float(self.full_history[sym][0]['Low'])
