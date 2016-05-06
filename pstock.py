@@ -154,7 +154,7 @@ class TA:
         for i in range(1, days_to_check):
             tmp_low = float(self.full_history[sym][i]['Low'])
             if abs(tmp_low - cur_low) < cur_close * 0.002:
-                print_red(sym + ': double needle bottom')
+                self.buy_signals += '\n' + sym + ': double needle bottom'
                 return
 
     def rule_large_negative_followed_by_small_positive(self, sym):
