@@ -18,8 +18,11 @@ def arg_parser():
 def read_watchlist() :
     return [line.strip() for line in open("watchlist.txt", 'r')]
 
+def format_red(str):
+    return("\033[91m{}\033[0m".format(str))
+
 def print_red(str):
-    print("\033[91m{}\033[0m".format(str))
+    print(format_red(str))
 
 def get_all_history(symbols, history_days) :
     print('requesting history data of '+str(history_days)+' days')
@@ -191,15 +194,15 @@ class TA:
         cur_price = float(self.full_history[sym][0]['Close'])
         pre_price = float(self.full_history[sym][1]['Close'])
         if cur_price > max(cur_sma1, cur_sma2, cur_sma3) and pre_price < min(pre_sma1, pre_sma2, pre_sma3):
-            print_red(sym+': crossing up all SMA lines from previous to current.')
+            self.buy_signals += '\n'+sym+': crossing up all SMA lines from previous to current.'
         elif cur_price < min(cur_sma1, cur_sma2, cur_sma3) and pre_price > max(pre_sma1, pre_sma2, pre_sma3):
-            print_red(sym+': crossing down all SMA lines from previous to current.')
+            self.sell_signals += '\n'+sym+': crossing down all SMA lines from previous to current.'
 
         cur_open = float(self.full_history[sym][0]['Open'])
         if cur_price > max(cur_sma1, cur_sma2, cur_sma3) and cur_open < min(cur_sma1, cur_sma2, cur_sma3):
-            print_red(sym+': crossing up all SMA lines from open to now.')
+            self.buy_signals += '\n'+sym+': crossing up all SMA lines from open to now.'
         elif cur_price < min(cur_sma1, cur_sma2, cur_sma3) and cur_open > max(cur_sma1, cur_sma2, cur_sma3):
-            print_red(sym+': crossing down all SMA lines from open to now.')
+            self.sell_signals += '\n'+sym+': crossing down all SMA lines from open to now.'
 
     # If one SMA lines crosses another
     def rule_sma_crossing(self, sym):
@@ -331,8 +334,8 @@ class TA:
         for days in [5, 10]:
             avgtmp = sum([float(x['Volume']) for x in self.full_history[sym][1:days+1]]) / days
             if day_volume >= avgtmp * threshold :
-                msg += ' cur-' + self.tu + ' volume up prev '+str(days)+'-' + self.tu + ' average by '+\
-                       '{0:+.0f}%'.format((day_volume - avgtmp) * 100 / avgtmp)+'.'
+                self.other_signals += '\n' + sym + ': cur-' + self.tu + ' volume up prev '+str(days)+'-' + self.tu +\
+                        ' average by ' + '{0:+.0f}%'.format((day_volume - avgtmp) * 100 / avgtmp)
 
         if len(msg) > 0:
             print(sym+':'+msg)
