@@ -66,8 +66,7 @@ class TA:
                       self.rule_sma_crossing,
                       self.rule_price_new_high,
                       self.rule_price_gaps,
-                      self.rule_price_range_compare,
-                      self.rule_volume_breakout]
+                      self.rule_price_range_compare]
 
     def get_latest(self):
         print('Requesting latest info: ' + datetime.now().isoformat())
@@ -323,23 +322,6 @@ class TA:
             max(cur_open, cur_close) < max(prev_open, prev_close)) :
             self.other_signals += '\n' + sym+': body price range smaller than previous'
 
-    def rule_volume_breakout(self, sym):
-        # If market is still trading, the current day's High and Low are not updated
-        if not self.market_stopped:
-            return
-
-        msg = ''
-        threshold = 1.15
-        day_volume = float(self.full_history[sym][0]['Volume'])
-        for days in [5, 10]:
-            avgtmp = sum([float(x['Volume']) for x in self.full_history[sym][1:days+1]]) / days
-            if day_volume >= avgtmp * threshold :
-                self.other_signals += '\n' + sym + ': cur-' + self.tu + ' volume up prev '+str(days)+'-' + self.tu +\
-                        ' average by ' + '{0:+.0f}%'.format((day_volume - avgtmp) * 100 / avgtmp)
-
-        if len(msg) > 0:
-            print(sym+':'+msg)
-
     def run_rules(self):
         skipped = False
         for sym in self.symbols:
@@ -383,8 +365,15 @@ class TA:
                 errmsg, self.market_stopped = self.get_latest()
                 if len(errmsg) > 0:
                     print(errmsg)
+
+                if self.market_stopped:
+                    print('Market is closed. Quit now.')
+                    sleep_time = 0
+                    return
+
                 if self.weekly_mode:
                     self.convert_into_weekly_prices()
+
                 self.calculations()
                 self.print_results()
                 self.run_rules()
@@ -393,10 +382,6 @@ class TA:
                 print(self.other_signals)
                 print('============++++++++============')
 
-                if self.market_stopped:
-                    print('Market is closed. Quit now.')
-                    sleep_time = 0
-                    return
             except Exception as err:
                 traceback.print_tb(err.__traceback__)
                 print('Retrying in '+str(sleep_time)+' seconds...')
