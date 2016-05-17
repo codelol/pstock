@@ -182,6 +182,8 @@ class TA:
 
     # If stock price has crossed multiple SMA lines
     def rule_breakthrough_sma(self, sym):
+        cur_price = float(self.full_history[sym][0]['Close'])
+
         day1 = self.interests_sma[0]
         day2 = self.interests_sma[1]
         day3 = self.interests_sma[2]
@@ -195,18 +197,20 @@ class TA:
         cur_sma3 = self.aggregates[sym]['sma'+str(day3)]
         pre_sma3 = self.aggregates[sym]['sma'+str(day3)+'_prev']
 
+        cur_open = float(self.full_history[sym][0]['Open'])
+        if cur_price > max(cur_sma1, cur_sma2, cur_sma3) and cur_open < min(cur_sma1, cur_sma2, cur_sma3):
+            self.buy_signals += '\n'+sym+': crossing up all SMA lines from open to now.'
+            return
+        elif cur_price < min(cur_sma1, cur_sma2, cur_sma3) and cur_open > max(cur_sma1, cur_sma2, cur_sma3):
+            self.sell_signals += '\n'+sym+': crossing down all SMA lines from open to now.'
+            return
+
         cur_price = float(self.full_history[sym][0]['Close'])
         pre_price = float(self.full_history[sym][1]['Close'])
         if cur_price > max(cur_sma1, cur_sma2, cur_sma3) and pre_price < min(pre_sma1, pre_sma2, pre_sma3):
             self.buy_signals += '\n'+sym+': crossing up all SMA lines from previous to current.'
         elif cur_price < min(cur_sma1, cur_sma2, cur_sma3) and pre_price > max(pre_sma1, pre_sma2, pre_sma3):
             self.sell_signals += '\n'+sym+': crossing down all SMA lines from previous to current.'
-
-        cur_open = float(self.full_history[sym][0]['Open'])
-        if cur_price > max(cur_sma1, cur_sma2, cur_sma3) and cur_open < min(cur_sma1, cur_sma2, cur_sma3):
-            self.buy_signals += '\n'+sym+': crossing up all SMA lines from open to now.'
-        elif cur_price < min(cur_sma1, cur_sma2, cur_sma3) and cur_open > max(cur_sma1, cur_sma2, cur_sma3):
-            self.sell_signals += '\n'+sym+': crossing down all SMA lines from open to now.'
 
     # If one SMA lines crosses another
     def rule_sma_crossing(self, sym):
