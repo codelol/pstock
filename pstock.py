@@ -8,6 +8,8 @@ import time, sys, argparse, traceback
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='pstock stock analysis tool in python')
+    parser.add_argument('filename', type=str, nargs='*', default=['watchlist.txt'],
+                        help='file that contains a list of ticker symbols')
     parser.add_argument('-v', dest='verbose', action='store_true', default=False,
                             help='specify verbose exception information')
     parser.add_argument('-w', dest='weekly_mode', action='store_true', default=False,
@@ -15,8 +17,11 @@ def arg_parser():
     args = parser.parse_args()
     return args;
 
-def read_watchlist() :
-    return [line.strip() for line in open("watchlist.txt", 'r')]
+def read_watchlist(files) :
+    ret = []
+    for f in files:
+        ret.extend([line.strip() for line in open(f, 'r')])
+    return ret
 
 def format_red(str):
     return("\033[91m{}\033[0m".format(str))
@@ -391,7 +396,7 @@ class TA:
 def main() :
     args = arg_parser()
 
-    watchlist = read_watchlist()
+    watchlist = read_watchlist(args.filename)
     print(watchlist)
 
     # put history info into full_history
