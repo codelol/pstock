@@ -62,9 +62,9 @@ class TA:
         self.full_history = full_history
         self.stashed_daily_history = full_history
         self.interests_sma = [5, 10, 20]
-        self.buy_signals =   '============ Buy Signals ============'
-        self.sell_signals =  '=========== Sell Signals ============'
-        self.other_signals = '========== Other Signals ============'
+        self.buy_signals = ''
+        self.sell_signals = ''
+        self.other_signals = ''
         self.rules = [self.rule_double_needle_bottom,
                       self.rule_large_negative_followed_by_small_positive,
                       self.rule_breakthrough_sma,
@@ -385,6 +385,10 @@ class TA:
 
                 self.calculations()
                 self.print_results()
+
+                self.buy_signals =   '============ Buy Signals ============'
+                self.sell_signals =  '=========== Sell Signals ============'
+                self.other_signals = '========== Other Signals ============'
                 self.run_rules()
                 print(self.buy_signals)
                 print(self.sell_signals)
