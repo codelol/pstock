@@ -51,6 +51,20 @@ def get_all_history(symbols, history_days) :
     print('received history data')
     return ret
 
+def is_cross(prices):
+    open_price = float(prices['Open'])
+    close_price = float(prices['Close'])
+
+    if abs(open_price - close_price) < close_price * 0.001:
+        return True
+    return False
+
+def is_positive(prices):
+    return float(prices['Close']) > float(prices['Open'])
+
+def is_negative(prices):
+    return float(prices['Close']) < float(prices['Open'])
+
 class TA:
     def __init__(self, watchlist, full_history, verbose, weekly_mode):
         self.market_stopped = False
@@ -67,6 +81,8 @@ class TA:
         self.other_signals = ''
         self.rules = [self.rule_double_needle_bottom,
                       self.rule_large_negative_followed_by_small_positive,
+                      self.rule_morning_star,
+                      self.rule_death_star,
                       self.rule_breakthrough_sma,
                       self.rule_sma_crossing,
                       self.rule_price_new_high,
@@ -128,6 +144,15 @@ class TA:
                 self.aggregates[sym]['sma'+str(days)] = sum([float(x['Close']) for x in self.full_history[sym][0:days]]) / days
                 self.aggregates[sym]['sma'+str(days)+'_prev'] = sum([float(x['Close']) for x in self.full_history[sym][1:days+1]]) / days
 
+    def get_all_smas(self, sym):
+        day1 = self.interests_sma[0]
+        day2 = self.interests_sma[1]
+        day3 = self.interests_sma[2]
+        cur_sma1 = self.aggregates[sym]['sma'+str(day1)]
+        cur_sma2 = self.aggregates[sym]['sma'+str(day2)]
+        cur_sma3 = self.aggregates[sym]['sma'+str(day3)]
+        return [cur_sma1, cur_sma2, cur_sma3]
+
     def calculations(self):
         self.cal_simple_moving_average()
 
@@ -179,6 +204,25 @@ class TA:
             # opening price of today is gapped down
             and cur_open < prev_close):
                 self.buy_signals += '\n' + sym + ': 插入线，待入线，切入线'
+
+    def rule_morning_star(self, sym):
+        if (is_positive(self.full_history[sym][0]) and
+            is_cross(self.full_history[sym][1]) and
+            is_negative(self.full_history[sym][2])):
+
+            cur_price = float(self.full_history[sym][0]['Close'])
+            if (cur_price < min(self.get_all_smas(sym))):
+                self.buy_signals += '\n' + sym + 'Morning Star'
+
+    def rule_death_star(self, sym):
+        if (is_negative(self.full_history[sym][0]) and
+            is_cross(self.full_history[sym][1]) and
+            is_positive(self.full_history[sym][2])):
+
+            cur_price = float(self.full_history[sym][0]['Close'])
+            if (cur_price > max(self.get_all_smas(sym))):
+                self.sell_signals += '\n' + sym + 'Death/Evening Star'
+
 
     # If stock price has crossed multiple SMA lines
     def rule_breakthrough_sma(self, sym):
