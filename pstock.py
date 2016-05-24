@@ -214,8 +214,12 @@ class TA:
             is_positive(self.full_history[sym][0])):
             #the first positive day should be a recent 'new high'
             if (float(self.full_history[sym][2]['Close']) >
-                max(float(self.full_history[sym][3]['Close']), float(self.full_history[sym][3]['Open']))):
-                self.buy_signals += '\n' + sym + '多方炮/两阳夹一阴'
+                max(float(self.full_history[sym][3]['Close']), float(self.full_history[sym][3]['Open']),
+                    float(self.full_history[sym][4]['Close']), float(self.full_history[sym][4]['Open']),
+                    float(self.full_history[sym][5]['Close']), float(self.full_history[sym][5]['Open']),
+                    float(self.full_history[sym][6]['Close']), float(self.full_history[sym][6]['Open'])
+                    )):
+                self.buy_signals += '\n' + sym + ': 多方炮/两阳夹一阴'
 
     #3-day pattern: negative, positive, negative. This is a possible sell signal
     def rule_short_side_canon(self, sym):
@@ -224,8 +228,12 @@ class TA:
             is_negative(self.full_history[sym][0])):
             #the first negative day should be a recent 'new low'
             if (float(self.full_history[sym][2]['Close']) <
-                min(float(self.full_history[sym][3]['Close']), float(self.full_history[sym][3]['Open']))):
-                self.sell_signals += '\n' + sym + '空方炮/两阴夹一阳'
+                min(float(self.full_history[sym][3]['Close']), float(self.full_history[sym][3]['Open']),
+                    float(self.full_history[sym][4]['Close']), float(self.full_history[sym][4]['Open']),
+                    float(self.full_history[sym][5]['Close']), float(self.full_history[sym][5]['Open']),
+                    float(self.full_history[sym][6]['Close']), float(self.full_history[sym][6]['Open'])
+                    )):
+                self.sell_signals += '\n' + sym + ': 空方炮/两阴夹一阳'
 
     def rule_morning_star(self, sym):
         if (is_positive(self.full_history[sym][0]) and
@@ -234,7 +242,7 @@ class TA:
 
             cur_price = float(self.full_history[sym][0]['Close'])
             if (cur_price < min(self.get_all_smas(sym))):
-                self.buy_signals += '\n' + sym + 'Morning Star'
+                self.buy_signals += '\n' + sym + ': Morning Star'
 
     def rule_death_star(self, sym):
         if (is_negative(self.full_history[sym][0]) and
@@ -243,7 +251,7 @@ class TA:
 
             cur_price = float(self.full_history[sym][0]['Close'])
             if (cur_price > max(self.get_all_smas(sym))):
-                self.sell_signals += '\n' + sym + 'Death/Evening Star'
+                self.sell_signals += '\n' + sym + ': Death/Evening Star'
 
 
     # If stock price has crossed multiple SMA lines
