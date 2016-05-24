@@ -20,7 +20,10 @@ def arg_parser():
 def read_watchlist(files) :
     ret = []
     for f in files:
-        ret.extend([line.strip() for line in open(f, 'r')])
+        for line in open(f, 'r'):
+            if line[0] == '#':
+                continue
+            ret.append(line.strip())
     return ret
 
 def format_red(str):
