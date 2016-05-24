@@ -153,9 +153,9 @@ class TA:
         day1 = self.interests_sma[0]
         day2 = self.interests_sma[1]
         day3 = self.interests_sma[2]
-        cur_sma1 = self.aggregates[sym]['sma'+str(day1)]
-        cur_sma2 = self.aggregates[sym]['sma'+str(day2)]
-        cur_sma3 = self.aggregates[sym]['sma'+str(day3)]
+        cur_sma1 = float(self.aggregates[sym]['sma'+str(day1)])
+        cur_sma2 = float(self.aggregates[sym]['sma'+str(day2)])
+        cur_sma3 = float(self.aggregates[sym]['sma'+str(day3)])
         return [cur_sma1, cur_sma2, cur_sma3]
 
     def calculations(self):
@@ -361,52 +361,23 @@ class TA:
         cur_range_total = abs(cur_low - cur_high)
         prev_range_total = abs(prev_low - prev_high)
 
-        cur_close = float(self.full_history[sym][0]['Close'])
-        cur_open = float(self.full_history[sym][0]['Open'])
-        prev_close = float(self.full_history[sym][1]['Close'])
-        prev_open = float(self.full_history[sym][1]['Open'])
-
-        cur_range_body = abs(cur_close - cur_open)
-        prev_range_body = abs(prev_close - prev_open)
-
-        if ((round(cur_range_total, 2) == 0 and round(prev_range_total, 2) == 0) or
-            (round(cur_range_body, 2) == 0 and round(prev_range_body, 2) == 0)):
-            print(sym+': price range is not valid')
-            return
-
-        time1 = self.interests_sma[0]
-        time2 = self.interests_sma[1]
-        time3 = self.interests_sma[2]
-        cur_sma1 = self.aggregates[sym]['sma'+str(time1)]
-        cur_sma2 = self.aggregates[sym]['sma'+str(time2)]
-        cur_sma3 = self.aggregates[sym]['sma'+str(time3)]
-        # following patterns only make sense if price is either at low level or high level
-        # price_at_low_level may be a buy point, make sure it's a very good one (bargain price)
-        # price_at_high_level may be a sell point, must check carefully
-        price_at_low_level = (cur_close < cur_sma1 and cur_close < cur_sma2 and cur_close < cur_sma3)
-        price_at_high_level = (cur_close > cur_sma1)
-        if price_at_low_level == False and price_at_high_level == False:
-            return
-
+        pattern_found = False
         if (cur_range_total > prev_range_total + 0.001 and
             cur_low < prev_low and cur_high > prev_high) :
-            self.other_signals += '\n' + sym+': total price range larger than previous'
-            return #when total range is something, skip body range
+            pattern_found = True
 
         if (cur_range_total < prev_range_total - 0.001 and
             cur_low > prev_low and cur_high < prev_high) :
-            self.other_signals += '\n' + sym+': total price range smaller than previous'
-            return #when total range is something, skip body range
+            pattern_found = True
 
-        if (cur_range_body > prev_range_body + 0.001 and
-            min(cur_open, cur_close) < min(prev_open, prev_close) and
-            max(cur_open, cur_close) > max(prev_open, prev_close)) :
-            self.other_signals += '\n' + sym+': body price range larger than previous'
+        if not pattern_found:
+            return
 
-        if (cur_range_body < prev_range_body - 0.001 and
-            min(cur_open, cur_close) > min(prev_open, prev_close) and
-            max(cur_open, cur_close) < max(prev_open, prev_close)) :
-            self.other_signals += '\n' + sym+': body price range smaller than previous'
+        if cur_low < min(self.get_all_smas(sym)):
+            self.buy_signals += '\n' + sym + ': price range fluctuation alert. Buy.'
+
+        if cur_high > max(self.get_all_smas(sym)):
+            self.sell_signals += '\n' + sym + ': price range fluctuation alert. Sell.'
 
     def run_rules(self):
         skipped = False
