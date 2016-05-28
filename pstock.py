@@ -330,10 +330,14 @@ class TA:
         # in weekly_mode, detect 10-week new high; if in daily mode, 20-day new high
         new_high_threshold = 10 if self.weekly_mode else 20
         cur_price = float(self.full_history[sym][0]['Close'])
-        for i in range(1, new_high_threshold):
-            if cur_price < float(self.full_history[sym][i]['High']):
-                return
-        self.buy_signals += '\n' + sym+': '+str(new_high_threshold)+'-'+self.tu+' new high!'
+        day_idx = 1
+        while day_idx < len(self.full_history[sym]):
+            if cur_price < float(self.full_history[sym][day_idx]['High']):
+                break
+            day_idx += 1
+        if day_idx < new_high_threshold:
+            return
+        self.buy_signals += '\n' + sym+': '+str(day_idx + 1)+'-'+self.tu+' new high!'
 
     def rule_price_gaps(self, sym):
         cur_low = float(self.full_history[sym][0]['Low'])
