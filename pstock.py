@@ -72,6 +72,7 @@ class TA:
     def __init__(self, watchlist, full_history, verbose, weekly_mode):
         self.market_stopped = False
         self.symbols = watchlist
+        self.missing_data = []
         self.verbose = verbose
         self.weekly_mode = weekly_mode
         self.tu = 'week' if weekly_mode else 'day'
@@ -129,15 +130,21 @@ class TA:
         tmp_history = {}
         for sym in self.symbols :
             tmp_history[sym] = []
-            # analyze 20 weeks (100 trading days) at most
-            for i in range(20):
-                price_dict = {}
-                price_dict['Open'] = self.full_history[sym][i * 5 + 4]['Open']
-                price_dict['Close'] = self.full_history[sym][i * 5]['Close']
-                price_dict['High'] = str(max([float(x['High']) for x in self.full_history[sym][(i*5):(i*5+5)]]))
-                price_dict['Low'] = str(min([float(x['Low']) for x in self.full_history[sym][(i*5):(i*5+5)]]))
-                price_dict['Volume'] = str(min([float(x['Volume']) for x in self.full_history[sym][(i*5):(i*5+5)]]))
-                tmp_history[sym] = tmp_history[sym] + [price_dict]
+
+            try:
+                # analyze 20 weeks (100 trading days) at most
+                for i in range(20):
+                    price_dict = {}
+                    price_dict['Open'] = self.full_history[sym][i * 5 + 4]['Open']
+                    price_dict['Close'] = self.full_history[sym][i * 5]['Close']
+                    price_dict['High'] = str(max([float(x['High']) for x in self.full_history[sym][(i*5):(i*5+5)]]))
+                    price_dict['Low'] = str(min([float(x['Low']) for x in self.full_history[sym][(i*5):(i*5+5)]]))
+                    price_dict['Volume'] = str(min([float(x['Volume']) for x in self.full_history[sym][(i*5):(i*5+5)]]))
+                    tmp_history[sym] = tmp_history[sym] + [price_dict]
+            except Exception as err:
+                # missing data for this symbol
+                self.symbols.remove(sym)
+                self.missing_data.append(sym)
 
         # now self.full_history should be a weekly prices
         self.full_history = tmp_history
@@ -145,9 +152,13 @@ class TA:
 
     def cal_simple_moving_average(self) :
         for sym in self.symbols :
-            for days in self.interests_sma :
-                self.aggregates[sym]['sma'+str(days)] = sum([float(x['Close']) for x in self.full_history[sym][0:days]]) / days
-                self.aggregates[sym]['sma'+str(days)+'_prev'] = sum([float(x['Close']) for x in self.full_history[sym][1:days+1]]) / days
+            try:
+                for days in self.interests_sma :
+                    self.aggregates[sym]['sma'+str(days)] = sum([float(x['Close']) for x in self.full_history[sym][0:days]]) / days
+                    self.aggregates[sym]['sma'+str(days)+'_prev'] = sum([float(x['Close']) for x in self.full_history[sym][1:days+1]]) / days
+            except Exception as err:
+                self.symbols.remove(sym)
+                self.missing_data.append(sym)
 
     def get_all_smas(self, sym):
         day1 = self.interests_sma[0]
@@ -408,15 +419,20 @@ class TA:
                    ]
         rows = []
         for sym in self.symbols :
-            r = []
-            price_change = float(self.full_history[sym][0]['Close']) - float(self.full_history[sym][1]['Close'])
-            r.append(sym)
-            r.append(float(self.full_history[sym][0]['Close']))
-            r.append('{0:+.2f}'.format(price_change * 100 / float(self.full_history[sym][1]['Close'])))
-            r.append('{0:+.2f}'.format(price_change))
-            r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day1)]) - float(self.aggregates[sym]['sma'+str(day2)])))
-            r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day2)]) - float(self.aggregates[sym]['sma'+str(day3)])))
-            rows.append(r)
+            try:
+                r = []
+                price_change = float(self.full_history[sym][0]['Close']) - float(self.full_history[sym][1]['Close'])
+                r.append(sym)
+                r.append(float(self.full_history[sym][0]['Close']))
+                r.append('{0:+.2f}'.format(price_change * 100 / float(self.full_history[sym][1]['Close'])))
+                r.append('{0:+.2f}'.format(price_change))
+                r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day1)]) - float(self.aggregates[sym]['sma'+str(day2)])))
+                r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day2)]) - float(self.aggregates[sym]['sma'+str(day3)])))
+                rows.append(r)
+            except Exception as err:
+                self.symbols.remove(sym)
+                self.missing_data.append(sym)
+
         print(tabulate(rows, headers))
 
     def loop(self):
@@ -451,6 +467,8 @@ class TA:
                 traceback.print_tb(err.__traceback__)
                 print('Retrying in '+str(sleep_time)+' seconds...')
             finally:
+                if len(self.missing_data) > 0:
+                    print('missing data for: '+str(self.missing_data))
                 time.sleep(sleep_time)
 
 def main() :
