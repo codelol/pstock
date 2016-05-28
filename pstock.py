@@ -141,7 +141,7 @@ class TA:
                     price_dict['Low'] = str(min([float(x['Low']) for x in self.full_history[sym][(i*5):(i*5+5)]]))
                     price_dict['Volume'] = str(min([float(x['Volume']) for x in self.full_history[sym][(i*5):(i*5+5)]]))
                     tmp_history[sym] = tmp_history[sym] + [price_dict]
-            except Exception as err:
+            except:
                 # missing data for this symbol
                 self.symbols.remove(sym)
                 self.missing_data.append(sym)
@@ -156,7 +156,7 @@ class TA:
                 for days in self.interests_sma :
                     self.aggregates[sym]['sma'+str(days)] = sum([float(x['Close']) for x in self.full_history[sym][0:days]]) / days
                     self.aggregates[sym]['sma'+str(days)+'_prev'] = sum([float(x['Close']) for x in self.full_history[sym][1:days+1]]) / days
-            except Exception as err:
+            except:
                 self.symbols.remove(sym)
                 self.missing_data.append(sym)
 
@@ -429,7 +429,7 @@ class TA:
                 r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day1)]) - float(self.aggregates[sym]['sma'+str(day2)])))
                 r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day2)]) - float(self.aggregates[sym]['sma'+str(day3)])))
                 rows.append(r)
-            except Exception as err:
+            except:
                 self.symbols.remove(sym)
                 self.missing_data.append(sym)
 
@@ -465,11 +465,15 @@ class TA:
 
             except Exception as err:
                 traceback.print_tb(err.__traceback__)
-                print('Retrying in '+str(sleep_time)+' seconds...')
             finally:
                 if len(self.missing_data) > 0:
                     print('missing data for: '+str(self.missing_data))
-                time.sleep(sleep_time)
+                try:
+                    print('continue in '+str(sleep_time)+' seconds...')
+                    time.sleep(sleep_time)
+                except:
+                    print('program interrupted. return now.')
+                    return
 
 def main() :
     args = arg_parser()
