@@ -36,6 +36,13 @@ def get_all_history(symbols, history_days) :
     print('requesting history data of '+str(history_days)+' days')
     def get_latest_trading_day() :
         cur_time = datetime.now(pytz.timezone('US/Eastern'))
+
+        # if right now is earlier than 9:30am, use 23:30 of previous day as the latest time
+        minutes = cur_time.hour * 60 + cur_time.minute
+        if minutes < 9 * 60 + 30:
+            cur_time = cur_time - timedelta(minutes = (minutes + 60))
+
+        # if cur_time is a weekend, use the most recent Friday
         return {
             6 : cur_time - timedelta(days = 2), # Sunday, return Friday
             5 : cur_time - timedelta(days = 1), # Saturday, return Friday
