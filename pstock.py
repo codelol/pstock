@@ -4,7 +4,7 @@ from yahoo_finance import Share
 from googlefinance import getQuotes
 from tabulate import tabulate
 from datetime import datetime, timedelta
-import time, sys, argparse, traceback
+import time, pytz, sys, argparse, traceback
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='pstock stock analysis tool in python')
@@ -35,13 +35,12 @@ def print_red(str):
 def get_all_history(symbols, history_days) :
     print('requesting history data of '+str(history_days)+' days')
     def get_latest_trading_day() :
-        # return today if it is a trading day, otherwise return the most recent one
-        today = datetime.today()
+        cur_time = datetime.now(pytz.timezone('US/Eastern'))
         return {
-            6 : today - timedelta(days = 2), # Sunday, return Friday
-            5 : today - timedelta(days = 1), # Saturday, return Friday
+            6 : cur_time - timedelta(days = 2), # Sunday, return Friday
+            5 : cur_time - timedelta(days = 1), # Saturday, return Friday
                                              # Monday to Friday is [0, 4]
-        }.get(today.weekday(), today)
+        }.get(cur_time.weekday(), cur_time)
 
     latest_trading_day = get_latest_trading_day()
 
@@ -96,7 +95,7 @@ class TA:
                       self.rule_price_range_compare]
 
     def get_latest(self):
-        print('Requesting latest info: ' + datetime.now().isoformat())
+        print('Requesting latest info US/Eastern time: ' + datetime.now(pytz.timezone('US/Eastern')).isoformat())
         errmsg = ''
         market_stopped = True
 
