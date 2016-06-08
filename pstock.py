@@ -32,15 +32,21 @@ def format_red(str):
 def print_red(str):
     print(format_red(str))
 
+# get 'current' new york time
+# If we are in the morning before market open, 9:30am, use 23:00 of previous day as 'current'.
+# So that 'current' always points to a time that has meaningful 'open', 'close' and other data
+def get_cur_time():
+    cur_time = datetime.now(pytz.timezone('US/Eastern'))
+    # if right now is earlier than 9:30am, use 23:30 of previous day as the latest time
+    minutes = cur_time.hour * 60 + cur_time.minute
+    if minutes < 9 * 60 + 30:
+        cur_time = cur_time - timedelta(minutes = (minutes + 60))
+    return cur_time
+
 def get_all_history(symbols, history_days) :
     print('requesting history data of '+str(history_days)+' days')
     def get_latest_trading_day() :
-        cur_time = datetime.now(pytz.timezone('US/Eastern'))
-
-        # if right now is earlier than 9:30am, use 23:30 of previous day as the latest time
-        minutes = cur_time.hour * 60 + cur_time.minute
-        if minutes < 9 * 60 + 30:
-            cur_time = cur_time - timedelta(minutes = (minutes + 60))
+        cur_time = get_cur_time()
 
         # if cur_time is a weekend, use the most recent Friday
         return {
@@ -102,7 +108,7 @@ class TA:
                       self.rule_price_range_compare]
 
     def get_latest(self):
-        print('Requesting latest info US/Eastern time: ' + datetime.now(pytz.timezone('US/Eastern')).isoformat())
+        print('Requesting latest info US/Eastern time: ' + get_cur_time().isoformat())
         errmsg = ''
         market_stopped = True
 
@@ -475,8 +481,9 @@ class TA:
                 if len(self.missing_data) > 0:
                     print('missing data for: '+str(self.missing_data))
                 try:
-                    print('continue in '+str(sleep_time)+' seconds...')
-                    time.sleep(sleep_time)
+                    if sleep_time > 0:
+                        print('continue in '+str(sleep_time)+' seconds...')
+                        time.sleep(sleep_time)
                 except:
                     print('program interrupted. return now.')
                     return
