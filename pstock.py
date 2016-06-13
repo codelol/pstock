@@ -91,18 +91,18 @@ class TA:
         self.aggregates = {sym : {} for sym in watchlist}
         self.full_history = full_history
         self.stashed_daily_history = full_history
-        self.interests_sma = [5, 10, 20]
+        self.interests_ema = [5, 10, 20]
         self.buy_signals = ''
         self.sell_signals = ''
         self.other_signals = ''
         self.rules = [self.rule_double_needle_bottom,
-                      self.rule_large_negative_followed_by_small_positive,
+                      self.rule_large_negative_followed_by_emall_positive,
                       self.rule_long_side_canon,
                       self.rule_short_side_canon,
                       self.rule_morning_star,
                       self.rule_death_star,
-                      self.rule_breakthrough_sma,
-                      self.rule_sma_crossing,
+                      self.rule_breakthrough_ema,
+                      self.rule_ema_crossing,
                       self.rule_price_new_high,
                       self.rule_price_gaps,
                       self.rule_price_range_compare]
@@ -165,33 +165,49 @@ class TA:
     def cal_simple_moving_average(self) :
         for sym in self.symbols :
             try:
-                for days in self.interests_sma :
-                    self.aggregates[sym]['sma'+str(days)] = sum([float(x['Close']) for x in self.full_history[sym][0:days]]) / days
-                    self.aggregates[sym]['sma'+str(days)+'_prev'] = sum([float(x['Close']) for x in self.full_history[sym][1:days+1]]) / days
+                for days in self.interests_ema :
+                    self.aggregates[sym]['ema'+str(days)] = sum([float(x['Close']) for x in self.full_history[sym][0:days]]) / days
+                    self.aggregates[sym]['ema'+str(days)+'_prev'] = sum([float(x['Close']) for x in self.full_history[sym][1:days+1]]) / days
             except:
                 self.symbols.remove(sym)
                 self.missing_data.append(sym)
 
-    def get_all_smas(self, sym):
-        day1 = self.interests_sma[0]
-        day2 = self.interests_sma[1]
-        day3 = self.interests_sma[2]
-        cur_sma1 = float(self.aggregates[sym]['sma'+str(day1)])
-        cur_sma2 = float(self.aggregates[sym]['sma'+str(day2)])
-        cur_sma3 = float(self.aggregates[sym]['sma'+str(day3)])
-        return [cur_sma1, cur_sma2, cur_sma3]
+    def cal_exponential_moving_average(self) :
+        for sym in self.symbols :
+            try:
+                for days in self.interests_ema :
+                    ratio = float(2 / (days + 1))
+                    cur_ema = 0
+                    prev_ema = 0
+                    for i in reversed(range(days + 150)):
+                        cur_ema = float(self.full_history[sym][i]['Close']) * ratio + cur_ema * (1 - ratio)
+                        prev_ema = float(self.full_history[sym][i+1]['Close']) * ratio + prev_ema * (1 - ratio)
+                    self.aggregates[sym]['ema'+str(days)] = cur_ema
+                    self.aggregates[sym]['ema'+str(days)+'_prev'] = prev_ema
+            except:
+                self.symbols.remove(sym)
+                self.missing_data.append(sym)
+
+    def get_all_emas(self, sym):
+        day1 = self.interests_ema[0]
+        day2 = self.interests_ema[1]
+        day3 = self.interests_ema[2]
+        cur_ema1 = float(self.aggregates[sym]['ema'+str(day1)])
+        cur_ema2 = float(self.aggregates[sym]['ema'+str(day2)])
+        cur_ema3 = float(self.aggregates[sym]['ema'+str(day3)])
+        return [cur_ema1, cur_ema2, cur_ema3]
 
     def calculations(self):
-        self.cal_simple_moving_average()
+        self.cal_exponential_moving_average()
 
     def rule_double_needle_bottom(self, sym):
         cur_close = float(self.full_history[sym][0]['Close'])
-        cur_sma1 = self.aggregates[sym]['sma'+str(self.interests_sma[0])]
-        cur_sma2 = self.aggregates[sym]['sma'+str(self.interests_sma[1])]
-        cur_sma3 = self.aggregates[sym]['sma'+str(self.interests_sma[2])]
+        cur_ema1 = self.aggregates[sym]['ema'+str(self.interests_ema[0])]
+        cur_ema2 = self.aggregates[sym]['ema'+str(self.interests_ema[1])]
+        cur_ema3 = self.aggregates[sym]['ema'+str(self.interests_ema[2])]
 
         # if price is not at a low level, don't bother
-        if cur_close > min(cur_sma1, cur_sma2, cur_sma3):
+        if cur_close > min(cur_ema1, cur_ema2, cur_ema3):
             return
 
         cur_open = float(self.full_history[sym][0]['Open'])
@@ -217,16 +233,16 @@ class TA:
                 self.buy_signals += '\n' + sym + ': double needle bottom'
                 return
 
-    def rule_large_negative_followed_by_small_positive(self, sym):
+    def rule_large_negative_followed_by_emall_positive(self, sym):
         cur_open = float(self.full_history[sym][0]['Open'])
         cur_close = float(self.full_history[sym][0]['Close'])
         prev_open = float(self.full_history[sym][1]['Open'])
         prev_close = float(self.full_history[sym][1]['Close'])
-        all_sma = [self.aggregates[sym]['sma'+str(x)] for x in self.interests_sma]
+        all_ema = [self.aggregates[sym]['ema'+str(x)] for x in self.interests_ema]
         # previous day is negative, and current day is positive
         if (prev_close < prev_open and cur_close > cur_open
-            # current price must be at a low level, e.g., sma5 < sma20
-            and all_sma[0] < all_sma[2]
+            # current price must be at a low level, e.g., ema5 < ema20
+            and all_ema[0] < all_ema[2]
             # negative range is at least 1.5 times larger than positive
             and abs(prev_close - prev_open) > 1.5 * abs(cur_close - cur_open)
             # opening price of today is gapped down
@@ -267,7 +283,7 @@ class TA:
             is_negative(self.full_history[sym][2])):
 
             cur_price = float(self.full_history[sym][0]['Close'])
-            if (cur_price < min(self.get_all_smas(sym))):
+            if (cur_price < min(self.get_all_emas(sym))):
                 self.buy_signals += '\n' + sym + ': Morning Star'
 
     def rule_death_star(self, sym):
@@ -276,76 +292,76 @@ class TA:
             is_positive(self.full_history[sym][2])):
 
             cur_price = float(self.full_history[sym][0]['Close'])
-            if (cur_price > max(self.get_all_smas(sym))):
+            if (cur_price > max(self.get_all_emas(sym))):
                 self.sell_signals += '\n' + sym + ': Death/Evening Star'
 
 
-    # If stock price has crossed multiple SMA lines
-    def rule_breakthrough_sma(self, sym):
+    # If stock price has crossed multiple ema lines
+    def rule_breakthrough_ema(self, sym):
         cur_price = float(self.full_history[sym][0]['Close'])
 
-        day1 = self.interests_sma[0]
-        day2 = self.interests_sma[1]
-        day3 = self.interests_sma[2]
+        day1 = self.interests_ema[0]
+        day2 = self.interests_ema[1]
+        day3 = self.interests_ema[2]
 
-        cur_sma1 = self.aggregates[sym]['sma'+str(day1)]
-        pre_sma1 = self.aggregates[sym]['sma'+str(day1)+'_prev']
+        cur_ema1 = self.aggregates[sym]['ema'+str(day1)]
+        pre_ema1 = self.aggregates[sym]['ema'+str(day1)+'_prev']
 
-        cur_sma2 = self.aggregates[sym]['sma'+str(day2)]
-        pre_sma2 = self.aggregates[sym]['sma'+str(day2)+'_prev']
+        cur_ema2 = self.aggregates[sym]['ema'+str(day2)]
+        pre_ema2 = self.aggregates[sym]['ema'+str(day2)+'_prev']
 
-        cur_sma3 = self.aggregates[sym]['sma'+str(day3)]
-        pre_sma3 = self.aggregates[sym]['sma'+str(day3)+'_prev']
+        cur_ema3 = self.aggregates[sym]['ema'+str(day3)]
+        pre_ema3 = self.aggregates[sym]['ema'+str(day3)+'_prev']
 
         cur_open = float(self.full_history[sym][0]['Open'])
-        if cur_price > max(cur_sma1, cur_sma2, cur_sma3) and cur_open < min(cur_sma1, cur_sma2, cur_sma3):
-            self.buy_signals += '\n'+sym+': crossing up all SMA lines from open to now.'
+        if cur_price > max(cur_ema1, cur_ema2, cur_ema3) and cur_open < min(cur_ema1, cur_ema2, cur_ema3):
+            self.buy_signals += '\n'+sym+': crossing up all ema lines from open to now.'
             return
-        elif cur_price < min(cur_sma1, cur_sma2, cur_sma3) and cur_open > max(cur_sma1, cur_sma2, cur_sma3):
-            self.sell_signals += '\n'+sym+': crossing down all SMA lines from open to now.'
+        elif cur_price < min(cur_ema1, cur_ema2, cur_ema3) and cur_open > max(cur_ema1, cur_ema2, cur_ema3):
+            self.sell_signals += '\n'+sym+': crossing down all ema lines from open to now.'
             return
 
         cur_price = float(self.full_history[sym][0]['Close'])
         pre_price = float(self.full_history[sym][1]['Close'])
-        if cur_price > max(cur_sma1, cur_sma2, cur_sma3) and pre_price < min(pre_sma1, pre_sma2, pre_sma3):
-            self.buy_signals += '\n'+sym+': crossing up all SMA lines from previous to current.'
-        elif cur_price < min(cur_sma1, cur_sma2, cur_sma3) and pre_price > max(pre_sma1, pre_sma2, pre_sma3):
-            self.sell_signals += '\n'+sym+': crossing down all SMA lines from previous to current.'
+        if cur_price > max(cur_ema1, cur_ema2, cur_ema3) and pre_price < min(pre_ema1, pre_ema2, pre_ema3):
+            self.buy_signals += '\n'+sym+': crossing up all ema lines from previous to current.'
+        elif cur_price < min(cur_ema1, cur_ema2, cur_ema3) and pre_price > max(pre_ema1, pre_ema2, pre_ema3):
+            self.sell_signals += '\n'+sym+': crossing down all ema lines from previous to current.'
 
-    # If one SMA lines crosses another
-    def rule_sma_crossing(self, sym):
-        day1 = self.interests_sma[0]
-        day2 = self.interests_sma[1]
-        day3 = self.interests_sma[2]
+    # If one ema lines crosses another
+    def rule_ema_crossing(self, sym):
+        day1 = self.interests_ema[0]
+        day2 = self.interests_ema[1]
+        day3 = self.interests_ema[2]
 
-        cur_sma1 = self.aggregates[sym]['sma'+str(day1)]
-        pre_sma1 = self.aggregates[sym]['sma'+str(day1)+'_prev']
+        cur_ema1 = self.aggregates[sym]['ema'+str(day1)]
+        pre_ema1 = self.aggregates[sym]['ema'+str(day1)+'_prev']
 
-        cur_sma2 = self.aggregates[sym]['sma'+str(day2)]
-        pre_sma2 = self.aggregates[sym]['sma'+str(day2)+'_prev']
+        cur_ema2 = self.aggregates[sym]['ema'+str(day2)]
+        pre_ema2 = self.aggregates[sym]['ema'+str(day2)+'_prev']
 
-        cur_sma3 = self.aggregates[sym]['sma'+str(day3)]
-        pre_sma3 = self.aggregates[sym]['sma'+str(day3)+'_prev']
+        cur_ema3 = self.aggregates[sym]['ema'+str(day3)]
+        pre_ema3 = self.aggregates[sym]['ema'+str(day3)+'_prev']
 
-        cur_sma1_minus_cur_sma2 = cur_sma1 - cur_sma2
-        pre_sma1_minus_pre_sma2 = pre_sma1 - pre_sma2
+        cur_ema1_minus_cur_ema2 = cur_ema1 - cur_ema2
+        pre_ema1_minus_pre_ema2 = pre_ema1 - pre_ema2
 
-        if (cur_sma1_minus_cur_sma2 * pre_sma1_minus_pre_sma2) <= 0:
-            if cur_sma1_minus_cur_sma2 > pre_sma1_minus_pre_sma2:
-                self.buy_signals += '\n' + sym + ': sma'+str(day1) + ' crossing up sma'+str(day2)+'.'
-            elif cur_sma1_minus_cur_sma2 < pre_sma1_minus_pre_sma2:
-                self.sell_signals += '\n' + sym + ': sma'+str(day1) + ' crossing down sma'+str(day2)+'.'
+        if (cur_ema1_minus_cur_ema2 * pre_ema1_minus_pre_ema2) <= 0:
+            if cur_ema1_minus_cur_ema2 > pre_ema1_minus_pre_ema2:
+                self.buy_signals += '\n' + sym + ': ema'+str(day1) + ' crossing up ema'+str(day2)+'.'
+            elif cur_ema1_minus_cur_ema2 < pre_ema1_minus_pre_ema2:
+                self.sell_signals += '\n' + sym + ': ema'+str(day1) + ' crossing down ema'+str(day2)+'.'
             else:
                 pass
 
-        cur_sma2_minus_cur_sma3 = cur_sma2 - cur_sma3
-        pre_sma2_minus_pre_sma3 = pre_sma2 - pre_sma3
+        cur_ema2_minus_cur_ema3 = cur_ema2 - cur_ema3
+        pre_ema2_minus_pre_ema3 = pre_ema2 - pre_ema3
 
-        if (cur_sma2_minus_cur_sma3 * pre_sma2_minus_pre_sma3) <= 0:
-            if cur_sma2_minus_cur_sma3 > pre_sma2_minus_pre_sma3:
-                self.buy_signals += '\n' + sym + ': sma'+str(day2) + ' crossing up sma'+str(day3)+'.'
-            elif cur_sma2_minus_cur_sma3 < pre_sma2_minus_pre_sma3:
-                self.sell_signals += '\n' + sym + ': sma'+str(day2) + ' crossing down sma'+str(day3)+'.'
+        if (cur_ema2_minus_cur_ema3 * pre_ema2_minus_pre_ema3) <= 0:
+            if cur_ema2_minus_cur_ema3 > pre_ema2_minus_pre_ema3:
+                self.buy_signals += '\n' + sym + ': ema'+str(day2) + ' crossing up ema'+str(day3)+'.'
+            elif cur_ema2_minus_cur_ema3 < pre_ema2_minus_pre_ema3:
+                self.sell_signals += '\n' + sym + ': ema'+str(day2) + ' crossing down ema'+str(day3)+'.'
             else:
                 pass
 
@@ -400,10 +416,10 @@ class TA:
         if not pattern_found:
             return
 
-        if cur_low < min(self.get_all_smas(sym)):
+        if cur_low < min(self.get_all_emas(sym)):
             self.buy_signals += '\n' + sym + ': price range fluctuation alert. Buy.'
 
-        if cur_high > max(self.get_all_smas(sym)):
+        if cur_high > max(self.get_all_emas(sym)):
             self.sell_signals += '\n' + sym + ': price range fluctuation alert. Sell.'
 
     def run_rules(self):
@@ -422,12 +438,12 @@ class TA:
             print('-- Some rules are skipped. Turn on verbose to see details. --')
 
     def print_results(self):
-        day1 = self.interests_sma[0]
-        day2 = self.interests_sma[1]
-        day3 = self.interests_sma[2]
+        day1 = self.interests_ema[0]
+        day2 = self.interests_ema[1]
+        day3 = self.interests_ema[2]
         headers = ['Symbol', 'Price', 'Change%', 'Change',
-                   'sma('+str(day1)+' - '+str(day2)+')',
-                   'sma('+str(day2)+' - '+str(day3)+')',
+                   'ema('+str(day1)+' - '+str(day2)+')',
+                   'ema('+str(day2)+' - '+str(day3)+')',
                    ]
         rows = []
         for sym in self.symbols :
@@ -438,8 +454,8 @@ class TA:
                 r.append(float(self.full_history[sym][0]['Close']))
                 r.append('{0:+.2f}'.format(price_change * 100 / float(self.full_history[sym][1]['Close'])))
                 r.append('{0:+.2f}'.format(price_change))
-                r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day1)]) - float(self.aggregates[sym]['sma'+str(day2)])))
-                r.append('{0:+.2f}'.format(float(self.aggregates[sym]['sma'+str(day2)]) - float(self.aggregates[sym]['sma'+str(day3)])))
+                r.append('{0:+.2f}'.format(float(self.aggregates[sym]['ema'+str(day1)]) - float(self.aggregates[sym]['ema'+str(day2)])))
+                r.append('{0:+.2f}'.format(float(self.aggregates[sym]['ema'+str(day2)]) - float(self.aggregates[sym]['ema'+str(day3)])))
                 rows.append(r)
             except:
                 self.symbols.remove(sym)
@@ -497,7 +513,7 @@ def main() :
     # put history info into full_history
     while True:
         try:
-            history_days = 200 if args.weekly_mode else 40
+            history_days = 260
             full_history = get_all_history(watchlist, history_days)
             break
         except:
