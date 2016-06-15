@@ -46,14 +46,45 @@ def touchFolder():
     if not os.path.exists(foldername):
         os.makedirs(foldername)
 
+def strWithZero(num):
+            s = str(num)
+            if len(s) < 2:
+                return '0' + s
+            return s
+
+def construct_yahoo_link(sym, m1, d1, y1, m2, d2, y2, type):
+    #on yahoo, month starts at 00, instead of 01
+    m1_z = strWithZero(m1 - 1)
+    m2_z = strWithZero(m2 - 1)
+    def getChartType(type) :
+        return {
+            'daily' : 'd',
+            'weekly' : 'w',
+            'monthly' : 'm'
+        }[type]
+    tstr = getChartType(type)
+    ret = 'http://real-chart.finance.yahoo.com/table.csv?s=' + sym
+    ret = ret + '&a=' + m1_z
+    ret = ret + '&b=' + str(d1)
+    ret = ret + '&c=' + str(y1)
+    ret = ret + '&d=' + m2_z
+    ret = ret + '&e=' + str(d2)
+    ret = ret + '&f=' + str(y2)
+    ret = ret + '&g=' + tstr
+    ret = ret + '&ignore=.csv'
+    return ret
+
 class USMarket:
     def __init__(self, watchlist):
         self.watchlist = watchlist
         self.full_history = {}
 
     def update_daily(self, sym):
-        history_ends = self.get_latest_daily_history_date(sym)
-        print(sym+ ' history ends: '+history_ends)
+        prev_history_ends = self.get_latest_daily_history_date(sym)
+        print(sym+ ' history ends: '+ prev_history_ends)
+        last_trading_day = self.get_last_trading_date()
+        print(sym+ ' latest trading days: '+ last_trading_day)
+        self.update_daily_history(sym, prev_history_ends, last_trading_day)
         return
         cur_time = datetime.now(pytz.timezone('US/Eastern'))
         fpathstub = foldername + '/' + sym + '-daily-'
@@ -78,12 +109,22 @@ class USMarket:
             return maxdate
         # otherwise, let's start from one year ago
         oneYearAgo = datetime.now(pytz.timezone('US/Eastern')) - timedelta(days = 366)
-        def strWithZero(num):
-            s = str(num)
-            if len(s) < 2:
-                return '0' + s
-            return s
         return '-'.join([strWithZero(x) for x in [oneYearAgo.year, oneYearAgo.month, oneYearAgo.day]])
+
+    def get_last_trading_date(self):
+        GOOGL = Share('GOOGL')
+        # get_trade_datetime returns the 'last' trading date, which is most-recent-date - 1
+        timestr = GOOGL.get_trade_datetime()
+        return timestr.split()[0]
+
+    # download .csv file for sym from yahoo finance
+    # starting on prev_history_ends + 1
+    # ending on last_trading_day
+    def update_daily_history(self, sym, prev_history_ends, last_trading_day):
+        start = datetime.strptime(prev_history_ends, '%Y-%m-%d') + timedelta(days = 1)
+        end = datetime.strptime(last_trading_day, '%Y-%m-%d')
+        link = construct_yahoo_link(sym, start.month, start.day, start.year, end.month, end.day, end.year, 'daily')
+        print('link: '+link)
 
 
     def download_daily_from_yahoo(self, sym, fpathstub, history_starts, cur_time):
