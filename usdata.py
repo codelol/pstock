@@ -22,6 +22,10 @@ import csv, os, argparse, fnmatch, pytz, urllib
 
 foldername = 'datafiles-us'
 
+# update this field periodically
+futureholidays = ['2016-07-04', '2016-09-05', '2016-11-24', '2016-12-25', '2016-12-26',
+                  '2017-01-01', '2017-01-16']
+
 def arg_parser():
     parser = argparse.ArgumentParser(description='pstock stock analysis tool in python')
     parser.add_argument('filename', type=str, nargs='*', default=['watchlist.txt'],
@@ -51,6 +55,36 @@ def strWithZero(num):
             if len(s) < 2:
                 return '0' + s
             return s
+
+# get 'current' new york time
+# If we are in the morning before market open, 9:30am, use 23:00 of previous day as 'current'.
+# So that 'current' always points to a time that has meaningful 'open', 'close' and other data
+def get_cur_time():
+    cur_time = datetime.now(pytz.timezone('US/Eastern'))
+    # if right now is earlier than 9:30am, use 23:30 of previous day as the latest time
+    minutes = cur_time.hour * 60 + cur_time.minute
+    if minutes < 9 * 60 + 30:
+        cur_time = cur_time - timedelta(minutes = (minutes + 60))
+    return cur_time
+
+def get_last_trading_date():
+    cur_time = get_cur_time()
+    #find the most recent trading day if not today
+    while True:
+        wd = cur_time.weekday()
+        if wd == 0 or wd == 6: #Sunday or #Saturday
+            cur_time = cur_time - timedelta(days = 1)
+            continue
+
+        ts = '-'.join([str(cur_time.year), strWithZero(cur_time.month), strWithZero(cur_time.day)])
+        if ts in futureholidays:
+            cur_time = cur_time - timedelta(days = 1)
+            continue
+
+        break
+    prev_day = cur_time - timedelta(days = 1)
+    ret = '-'.join([str(prev_day.year), strWithZero(prev_day.month), strWithZero(prev_day.day)])
+    return ret
 
 def construct_yahoo_link(sym, m1, d1, y1, m2, d2, y2, type):
     #on yahoo, month starts at 00, instead of 01
@@ -82,7 +116,7 @@ class USMarket:
     def update_daily(self, sym):
         prev_history_ends = self.get_latest_daily_history_date(sym)
         print(sym+ ' history ends: '+ prev_history_ends)
-        last_trading_day = self.get_last_trading_date()
+        last_trading_day = get_last_trading_date()
         print(sym+ ' latest trading days: '+ last_trading_day)
         self.update_daily_history(sym, prev_history_ends, last_trading_day)
         self.load_daily_from_file(sym)
@@ -103,12 +137,6 @@ class USMarket:
         # otherwise, let's start from one year ago
         oneYearAgo = datetime.now(pytz.timezone('US/Eastern')) - timedelta(days = 366)
         return '-'.join([strWithZero(x) for x in [oneYearAgo.year, oneYearAgo.month, oneYearAgo.day]])
-
-    def get_last_trading_date(self):
-        GOOGL = Share('GOOGL')
-        # get_trade_datetime returns the 'last' trading date, which is most-recent-date - 1
-        timestr = GOOGL.get_trade_datetime()
-        return timestr.split()[0]
 
     # download .csv file for sym from yahoo finance
     # starting on prev_history_ends + 1
