@@ -18,7 +18,7 @@ http://real-chart.finance.yahoo.com/table.csv?s=TSLA&a=05&b=29&c=2015&d=05&e=15&
 from yahoo_finance import Share
 from googlefinance import getQuotes
 from datetime import datetime, timedelta
-import os, argparse, fnmatch, pytz, urllib
+import csv, os, argparse, fnmatch, pytz, urllib
 
 foldername = 'datafiles-us'
 
@@ -85,22 +85,14 @@ class USMarket:
         last_trading_day = self.get_last_trading_date()
         print(sym+ ' latest trading days: '+ last_trading_day)
         self.update_daily_history(sym, prev_history_ends, last_trading_day)
-        return
-        cur_time = datetime.now(pytz.timezone('US/Eastern'))
-        fpathstub = foldername + '/' + sym + '-daily-'
-        if os.path.exists(fpathstub):
-            #load what we have already
-            self.load_daily_from_file(sym)
-        else:
-            history_starts = cur_time - timedelta(days = 365)
-        self.update_daily_from_web(sym, fpathstub, history_starts, cur_time)
+        self.load_daily_from_file(sym)
 
     def get_latest_daily_history_date(self, sym):
         prefix = sym + '-daily-'
         maxdate = '1900-01-01'
         foundFile = False
         for fname in os.listdir(foldername):
-            if fnmatch.fnmatch(fname, sym + '*'):
+            if fnmatch.fnmatch(fname, prefix + '*'):
                 foundFile = True
                 datestr_no_prefix = fname[len(prefix):]
                 datestr = datestr_no_prefix[:len(maxdate)] #remove suffix '.csv'
@@ -132,8 +124,21 @@ class USMarket:
             pass
 
 
-    def load_daily_from_file(self, fpath):
-        pass
+    def load_daily_from_file(self, sym):
+        self.full_history[sym] = {}
+        prefix = sym + '-daily-'
+        foundFile = False
+        for fname in os.listdir(foldername):
+            if fnmatch.fnmatch(fname, prefix + '*'):
+                foundFile = True
+                localfpath = os.path.join(foldername, fname)
+                with open(localfpath) as csvfile:
+                    reader = csv.DictReader(csvfile)
+                    for datapoint in reader:
+                        self.full_history[sym][datapoint['Date']] = datapoint
+                    csvfile.close()
+        assert(foundFile)
+
 
     def construct_yahoo_link(self, sym, ):
         pass
