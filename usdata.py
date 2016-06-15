@@ -18,7 +18,7 @@ http://real-chart.finance.yahoo.com/table.csv?s=TSLA&a=05&b=29&c=2015&d=05&e=15&
 from yahoo_finance import Share
 from googlefinance import getQuotes
 from datetime import datetime, timedelta
-import os, argparse, fnmatch, pytz
+import os, argparse, fnmatch, pytz, urllib
 
 foldername = 'datafiles-us'
 
@@ -102,7 +102,8 @@ class USMarket:
         for fname in os.listdir(foldername):
             if fnmatch.fnmatch(fname, sym + '*'):
                 foundFile = True
-                datestr = fname[len(prefix):]
+                datestr_no_prefix = fname[len(prefix):]
+                datestr = datestr_no_prefix[:len(maxdate)] #remove suffix '.csv'
                 if datestr > maxdate:
                     maxdate = datestr
         if foundFile:
@@ -124,15 +125,12 @@ class USMarket:
         start = datetime.strptime(prev_history_ends, '%Y-%m-%d') + timedelta(days = 1)
         end = datetime.strptime(last_trading_day, '%Y-%m-%d')
         link = construct_yahoo_link(sym, start.month, start.day, start.year, end.month, end.day, end.year, 'daily')
-        print('link: '+link)
+        localfpath = os.path.join(foldername, sym+'-daily-'+last_trading_day+'.csv')
+        try:
+            urllib.request.urlretrieve(link, localfpath)
+        except:
+            pass
 
-
-    def download_daily_from_yahoo(self, sym, fpathstub, history_starts, cur_time):
-        if sym in self.full_history.keys():
-            # get the late date in history file
-            history_starts = cur_time - timedelta(days = 5)
-
-        history_ends = cur_time
 
     def load_daily_from_file(self, fpath):
         pass
