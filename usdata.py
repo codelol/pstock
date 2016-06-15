@@ -32,8 +32,8 @@ def arg_parser():
                         help='file that contains a list of ticker symbols')
     parser.add_argument('-v', dest='verbose', action='store_true', default=False,
                             help='specify verbose exception information')
-    parser.add_argument('-w', dest='run weekly data', action='store_true', default=False,
-                            help='analyze weekly charts instead of daily charts')
+    parser.add_argument('-w', dest='frequency', default='daily',
+                            help='daily (default), weekly or monthly data')
     args = parser.parse_args()
     return args;
 
@@ -109,17 +109,18 @@ def construct_yahoo_link(sym, m1, d1, y1, m2, d2, y2, type):
     return ret
 
 class USMarket:
-    def __init__(self, watchlist):
+    def __init__(self, watchlist, frequency):
         self.watchlist = watchlist
         self.full_history = {}
+        self.frequency = frequency
 
     def update_daily(self, sym):
         prev_history_ends = self.get_latest_daily_history_date(sym)
-        print(sym+ ' history ends: '+ prev_history_ends)
         last_trading_day = get_last_trading_date()
-        print(sym+ ' latest trading days: '+ last_trading_day)
         self.update_daily_history(sym, prev_history_ends, last_trading_day)
         self.load_daily_from_file(sym)
+        self.fetch_current_data(sym)
+        pass
 
     def get_latest_daily_history_date(self, sym):
         prefix = sym + '-daily-'
@@ -151,6 +152,17 @@ class USMarket:
         except:
             pass
 
+    def fetch_current_data(self, sym):
+        sdata = Share(sym)
+        cur_time = get_cur_time()
+        ts = '-'.join([str(cur_time.year), strWithZero(cur_time.month), strWithZero(cur_time.day)])
+        self.full_history[sym][ts] = \
+        t = {}
+        t['Date']  = '3000-01-01' #debugging purposes, so we know this is current. This won't be saved to file
+        t['Open']  = sdata.get_open()
+        t['Close'] = sdata.get_price()
+        t['High']  = sdata.get_days_high()
+        t['Low']   = sdata.get_days_low()
 
     def load_daily_from_file(self, sym):
         self.full_history[sym] = {}
@@ -176,9 +188,14 @@ class USMarket:
         pass
 
     def fetchdata(self):
-        for sym in self.watchlist:
-            self.update_daily(sym)
-            self.update_weekly(sym)
+        if self.frequency == 'daily':
+            for sym in self.watchlist:
+                self.update_daily(sym)
+
+        elif self.frequency == 'weekly':
+            for sym in self.watchlist:
+                self.update_weekly(sym)
+
 
 def main() :
     args = arg_parser()
@@ -186,7 +203,7 @@ def main() :
     print(watchlist)
 
     touchFolder()
-    usm = USMarket(watchlist)
+    usm = USMarket(watchlist, args.frequency)
     usm.fetchdata()
 
 if __name__ == '__main__' :
