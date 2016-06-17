@@ -198,6 +198,7 @@ class USMarket:
                 self.update_weekly(sym)
 
     def getData(self):
+        touchFolder()
         self.fetchdata()
         sortedByDate = {}
         # return an array (instead of dict)
