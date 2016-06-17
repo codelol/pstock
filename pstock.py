@@ -7,14 +7,16 @@ from datetime import datetime, timedelta
 import time, pytz, sys, argparse, traceback
 from ptools import Metrics
 
+from usdata import USMarket
+
 def arg_parser():
     parser = argparse.ArgumentParser(description='pstock stock analysis tool in python')
     parser.add_argument('filename', type=str, nargs='*', default=['watchlist.txt'],
                         help='file that contains a list of ticker symbols')
     parser.add_argument('-v', dest='verbose', action='store_true', default=False,
                             help='specify verbose exception information')
-    parser.add_argument('-w', dest='weekly_mode', action='store_true', default=False,
-                            help='analyze weekly charts instead of daily charts')
+    parser.add_argument('-q', dest='frequency', default='daily',
+                            help='daily (default), weekly or monthly data')
     args = parser.parse_args()
     return args;
 
@@ -32,40 +34,6 @@ def format_red(str):
 
 def print_red(str):
     print(format_red(str))
-
-# get 'current' new york time
-# If we are in the morning before market open, 9:30am, use 23:00 of previous day as 'current'.
-# So that 'current' always points to a time that has meaningful 'open', 'close' and other data
-def get_cur_time():
-    cur_time = datetime.now(pytz.timezone('US/Eastern'))
-    # if right now is earlier than 9:30am, use 23:30 of previous day as the latest time
-    minutes = cur_time.hour * 60 + cur_time.minute
-    if minutes < 9 * 60 + 30:
-        cur_time = cur_time - timedelta(minutes = (minutes + 60))
-    return cur_time
-
-def get_all_history(symbols, history_days) :
-    print('requesting history data of '+str(history_days)+' days')
-    def get_latest_trading_day() :
-        cur_time = get_cur_time()
-
-        # if cur_time is a weekend, use the most recent Friday
-        return {
-            6 : cur_time - timedelta(days = 2), # Sunday, return Friday
-            5 : cur_time - timedelta(days = 1), # Saturday, return Friday
-                                             # Monday to Friday is [0, 4]
-        }.get(cur_time.weekday(), cur_time)
-
-    latest_trading_day = get_latest_trading_day()
-
-    history_starting_day = latest_trading_day - timedelta(days = int(history_days))
-    history_ending_day = latest_trading_day - timedelta(days = 1)
-    start = history_starting_day.date().isoformat()
-    end   = history_ending_day.date().isoformat()
-
-    ret = {sym : [{'Close':'0'}] + Share(sym).get_historical(start, end) for sym in symbols}
-    print('received history data')
-    return ret
 
 def is_cross(prices):
     open_price = float(prices['Open'])
@@ -108,36 +76,6 @@ class TA:
                       self.rule_price_new_high,
                       self.rule_price_gaps,
                       self.rule_price_range_compare]
-
-    def get_latest(self):
-        print('Requesting latest info US/Eastern time: ' + get_cur_time().isoformat())
-        errmsg = ''
-        market_stopped = True
-
-        # if using weekly_mode, full_history is 'weekly' price during analysis, but when fetching prices
-        # let's restore it into daily price history
-        if self.weekly_mode:
-            self.full_history = self.stashed_daily_history
-
-        for sym in self.symbols :
-            old_price = self.full_history[sym][0]['Close']
-            # or Yahoo if Google is not available
-            ydata = Share(sym)
-            self.full_history[sym][0]['Close'] = ydata.get_price()
-            try:
-                # use Google API for no-delay quotes if the service is available
-                self.full_history[sym][0]['Close'] = getQuotes(sym)[0]['LastTradePrice']
-            except:
-                errmsg = 'Google API error: ' + str(sys.exc_info()[0])
-
-            if old_price != self.full_history[sym][0]['Close']:
-                market_stopped = False
-                self.full_history[sym][0]['Open'] = ydata.get_open()
-                self.full_history[sym][0]['Low']   = ydata.get_days_low()
-                self.full_history[sym][0]['High']  = ydata.get_days_high()
-                self.full_history[sym][0]['Volume']  = ydata.get_volume()
-
-        return errmsg, market_stopped
 
     def convert_into_weekly_prices(self):
         self.stashed_daily_history = self.full_history
@@ -461,67 +399,31 @@ class TA:
 
         print(tabulate(rows, headers))
 
-    def loop(self):
-        sleep_time = 300
-        while True:
-            try:
-                errmsg, self.market_stopped = self.get_latest()
-                if len(errmsg) > 0:
-                    print(errmsg)
+    def run(self):
+        if self.weekly_mode:
+            self.convert_into_weekly_prices()
 
-                if self.market_stopped:
-                    print('Market is closed. Quit now.')
-                    sleep_time = 0
-                    return
+        self.calculations()
+        self.print_results()
 
-                if self.weekly_mode:
-                    self.convert_into_weekly_prices()
+        self.buy_signals =   '============ Buy Signals ============'
+        self.sell_signals =  '=========== Sell Signals ============'
+        self.other_signals = '========== Other Signals ============'
+        self.run_rules()
+        print(self.buy_signals)
+        print(self.sell_signals)
+        print(self.other_signals)
 
-                self.calculations()
-                self.print_results()
-
-                self.buy_signals =   '============ Buy Signals ============'
-                self.sell_signals =  '=========== Sell Signals ============'
-                self.other_signals = '========== Other Signals ============'
-                self.run_rules()
-                print(self.buy_signals)
-                print(self.sell_signals)
-                print(self.other_signals)
-                print('============++++++++============')
-
-            except Exception as err:
-                traceback.print_tb(err.__traceback__)
-            finally:
-                if len(self.missing_data) > 0:
-                    print('missing data for: '+str(self.missing_data))
-                try:
-                    if sleep_time > 0:
-                        print('continue in '+str(sleep_time)+' seconds...')
-                        time.sleep(sleep_time)
-                except:
-                    print('program interrupted. return now.')
-                    return
 
 def main() :
     args = arg_parser()
 
     watchlist = read_watchlist(args.filename)
     print(watchlist)
+    marketData = USMarket(watchlist, args.frequency)
 
-    # put history info into full_history
-    while True:
-        try:
-            history_days = 260
-            full_history = get_all_history(watchlist, history_days)
-            break
-        except:
-            sleep_time = 60
-            print('Unable to retrieve history data: ' + sys.exc_info()[0])
-            print('Retrying in '+str(sleep_time)+' seconds...')
-            time.sleep(sleep_time)
-
-    ta = TA(watchlist, full_history, args.verbose, args.weekly_mode)
-    ta.loop()
+    ta = TA(watchlist, marketData.getData(), args.verbose, False)
+    ta.run()
 
 if __name__ == '__main__' :
     main()

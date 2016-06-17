@@ -19,9 +19,6 @@ from yahoo_finance import Share
 from googlefinance import getQuotes as gQuotes
 from datetime import datetime, timedelta
 import csv, os, argparse, fnmatch, pytz, urllib
-import ptools
-
-from pstock import TA
 
 foldername = 'datafiles-us'
 
@@ -200,6 +197,14 @@ class USMarket:
             for sym in self.watchlist:
                 self.update_weekly(sym)
 
+    def getData(self):
+        self.fetchdata()
+        sortedByDate = {}
+        # return an array (instead of dict)
+        # [0] is the most recent price point
+        for sym in self.watchlist:
+            sortedByDate[sym] = [self.full_history[sym][date] for date in sorted(self.full_history[sym].keys(), reverse=True)]
+        return sortedByDate
 
 def main() :
     args = arg_parser()
@@ -210,14 +215,13 @@ def main() :
     usm = USMarket(watchlist, args.frequency)
     usm.fetchdata()
 
-    dateSorted = {}
-    for sym in watchlist:
-        dateSorted[sym] = [usm.full_history[sym][date] for date in sorted(usm.full_history[sym].keys(), reverse=True)]
-
-    ta = TA(watchlist, dateSorted, True)
-    ta.calculations()
-    ta.print_results()
-    pass
+    # dateSorted = {}
+    # for sym in watchlist:
+    #     dateSorted[sym] = [usm.full_history[sym][date] for date in sorted(usm.full_history[sym].keys(), reverse=True)]
+    #
+    # ta = TA(watchlist, dateSorted, True)
+    # ta.calculations()
+    # ta.print_results()
 
 if __name__ == '__main__' :
     main()
