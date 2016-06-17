@@ -19,6 +19,7 @@ from yahoo_finance import Share
 from googlefinance import getQuotes as gQuotes
 from datetime import datetime, timedelta
 import csv, os, argparse, fnmatch, pytz, urllib
+import ptools
 
 from pstock import TA
 
@@ -212,7 +213,6 @@ def main() :
     dateSorted = {}
     for sym in watchlist:
         dateSorted[sym] = [usm.full_history[sym][date] for date in sorted(usm.full_history[sym].keys(), reverse=True)]
-    pass
 
     ta = TA(watchlist, dateSorted, True)
     ta.calculations()

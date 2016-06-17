@@ -5,6 +5,7 @@ from googlefinance import getQuotes
 from tabulate import tabulate
 from datetime import datetime, timedelta
 import time, pytz, sys, argparse, traceback
+from ptools import Metrics
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='pstock stock analysis tool in python')
@@ -89,6 +90,7 @@ class TA:
         self.weekly_mode = weekly_mode
         self.tu = 'week' if weekly_mode else 'day'
         self.aggregates = {sym : {} for sym in watchlist}
+        self.metrics = {sym : {} for sym in watchlist}
         self.full_history = full_history
         self.stashed_daily_history = full_history
         self.interests_ema = [5, 10, 20]
@@ -175,15 +177,11 @@ class TA:
     def cal_exponential_moving_average(self) :
         for sym in self.symbols :
             try:
+                datapoints = [float(x['Close']) for x in self.full_history[sym]]
                 for days in self.interests_ema :
-                    ratio = float(2 / (days + 1))
-                    cur_ema = 0
-                    prev_ema = 0
-                    for i in reversed(range(days + 150)):
-                        cur_ema = float(self.full_history[sym][i]['Close']) * ratio + cur_ema * (1 - ratio)
-                        prev_ema = float(self.full_history[sym][i+1]['Close']) * ratio + prev_ema * (1 - ratio)
-                    self.aggregates[sym]['ema'+str(days)] = cur_ema
-                    self.aggregates[sym]['ema'+str(days)+'_prev'] = prev_ema
+                    self.metrics[sym]['ema'] = Metrics().ema(datapoints, days)
+                    self.aggregates[sym]['ema'+str(days)] = self.metrics[sym]['ema'][0]
+                    self.aggregates[sym]['ema'+str(days)+'_prev'] = self.metrics[sym]['ema'][1]
             except:
                 self.symbols.remove(sym)
                 self.missing_data.append(sym)
