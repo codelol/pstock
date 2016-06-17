@@ -16,9 +16,11 @@ http://real-chart.finance.yahoo.com/table.csv?s=TSLA&a=05&b=29&c=2015&d=05&e=15&
 """
 
 from yahoo_finance import Share
-from googlefinance import getQuotes
+from googlefinance import getQuotes as gQuotes
 from datetime import datetime, timedelta
 import csv, os, argparse, fnmatch, pytz, urllib
+
+from pstock import TA
 
 foldername = 'datafiles-us'
 
@@ -152,18 +154,6 @@ class USMarket:
         except:
             pass
 
-    def fetch_current_data(self, sym):
-        sdata = Share(sym)
-        cur_time = get_cur_time()
-        ts = '-'.join([str(cur_time.year), strWithZero(cur_time.month), strWithZero(cur_time.day)])
-        self.full_history[sym][ts] = \
-        t = {}
-        t['Date']  = '3000-01-01' #debugging purposes, so we know this is current. This won't be saved to file
-        t['Open']  = sdata.get_open()
-        t['Close'] = sdata.get_price()
-        t['High']  = sdata.get_days_high()
-        t['Low']   = sdata.get_days_low()
-
     def load_daily_from_file(self, sym):
         self.full_history[sym] = {}
         prefix = sym + '-daily-'
@@ -179,6 +169,19 @@ class USMarket:
                     csvfile.close()
         assert(foundFile)
 
+
+    def fetch_current_data(self, sym):
+        sdata = Share(sym)
+        cur_time = get_cur_time()
+        ts = '-'.join([str(cur_time.year), strWithZero(cur_time.month), strWithZero(cur_time.day)])
+        self.full_history[sym][ts] = \
+        t = {}
+        t['Date']  = '3000-01-01' #debugging purposes, so we know this is current. This won't be saved to file
+        t['High']  = sdata.get_days_high()
+        t['Low']   = sdata.get_days_low()
+        t['Open']  = sdata.get_open()
+        # t['Close'] = sdata.get_price()
+        t['Close'] = gQuotes(sym)[0]['LastTradePrice'] # use google data for latest 'Close', which is more accurate
 
     def construct_yahoo_link(self, sym, ):
         pass
@@ -205,6 +208,16 @@ def main() :
     touchFolder()
     usm = USMarket(watchlist, args.frequency)
     usm.fetchdata()
+
+    dateSorted = {}
+    for sym in watchlist:
+        dateSorted[sym] = [usm.full_history[sym][date] for date in sorted(usm.full_history[sym].keys(), reverse=True)]
+    pass
+
+    ta = TA(watchlist, dateSorted, True)
+    ta.calculations()
+    ta.print_results()
+    pass
 
 if __name__ == '__main__' :
     main()

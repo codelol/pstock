@@ -81,7 +81,7 @@ def is_negative(prices):
     return float(prices['Close']) < float(prices['Open'])
 
 class TA:
-    def __init__(self, watchlist, full_history, verbose, weekly_mode):
+    def __init__(self, watchlist, full_history, verbose = False, weekly_mode = False):
         self.market_stopped = False
         self.symbols = watchlist
         self.missing_data = []
