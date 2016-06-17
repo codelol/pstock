@@ -117,7 +117,9 @@ class USMarket:
     def update_daily(self, sym):
         prev_history_ends = self.get_latest_daily_history_date(sym)
         last_trading_day = get_last_trading_date()
-        self.update_daily_history(sym, prev_history_ends, last_trading_day)
+        assert(prev_history_ends <= last_trading_day)
+        if prev_history_ends < last_trading_day:
+            self.download_most_recent_daily(sym, prev_history_ends, last_trading_day)
         self.load_daily_from_file(sym)
         self.fetch_current_data(sym)
         pass
@@ -142,7 +144,7 @@ class USMarket:
     # download .csv file for sym from yahoo finance
     # starting on prev_history_ends + 1
     # ending on last_trading_day
-    def update_daily_history(self, sym, prev_history_ends, last_trading_day):
+    def download_most_recent_daily(self, sym, prev_history_ends, last_trading_day):
         start = datetime.strptime(prev_history_ends, '%Y-%m-%d') + timedelta(days = 1)
         end = datetime.strptime(last_trading_day, '%Y-%m-%d')
         link = construct_yahoo_link(sym, start.month, start.day, start.year, end.month, end.day, end.year, 'daily')
