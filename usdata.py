@@ -111,7 +111,7 @@ def construct_yahoo_link(sym, m1, d1, y1, m2, d2, y2, type):
 class USMarket:
     def __init__(self, watchlist, frequency):
         self.watchlist = watchlist
-        self.full_history = {}
+        self.datasets = {}
         self.frequency = frequency
 
     def update_daily(self, sym):
@@ -155,7 +155,7 @@ class USMarket:
             pass
 
     def load_daily_from_file(self, sym):
-        self.full_history[sym] = {}
+        self.datasets[sym] = {}
         prefix = sym + '-daily-'
         foundFile = False
         for fname in os.listdir(foldername):
@@ -165,7 +165,7 @@ class USMarket:
                 with open(localfpath) as csvfile:
                     reader = csv.DictReader(csvfile)
                     for datapoint in reader:
-                        self.full_history[sym][datapoint['Date']] = datapoint
+                        self.datasets[sym][datapoint['Date']] = datapoint
                     csvfile.close()
         assert(foundFile)
 
@@ -174,7 +174,7 @@ class USMarket:
         sdata = Share(sym)
         cur_time = get_cur_time()
         ts = '-'.join([str(cur_time.year), strWithZero(cur_time.month), strWithZero(cur_time.day)])
-        self.full_history[sym][ts] = \
+        self.datasets[sym][ts] = \
         t = {}
         t['Date']  = '3000-01-01' #debugging purposes, so we know this is current. This won't be saved to file
         t['High']  = sdata.get_days_high()
@@ -206,7 +206,7 @@ class USMarket:
         # return an array (instead of dict)
         # [0] is the most recent price point
         for sym in self.watchlist:
-            sortedByDate[sym] = [self.full_history[sym][date] for date in sorted(self.full_history[sym].keys(), reverse=True)]
+            sortedByDate[sym] = [self.datasets[sym][date] for date in sorted(self.datasets[sym].keys(), reverse=True)]
         return sortedByDate
 
 def main() :
@@ -220,7 +220,7 @@ def main() :
 
     # dateSorted = {}
     # for sym in watchlist:
-    #     dateSorted[sym] = [usm.full_history[sym][date] for date in sorted(usm.full_history[sym].keys(), reverse=True)]
+    #     dateSorted[sym] = [usm.datasets[sym][date] for date in sorted(usm.datasets[sym].keys(), reverse=True)]
     #
     # ta = TA(watchlist, dateSorted, True)
     # ta.calculations()
