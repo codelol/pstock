@@ -81,6 +81,7 @@ def get_last_trading_date():
             cur_time = cur_time - timedelta(days = 1)
             continue
 
+        cur_time = cur_time - timedelta(days = 1)
         break
     prev_day = cur_time - timedelta(days = 1)
     ret = '-'.join([str(prev_day.year), strWithZero(prev_day.month), strWithZero(prev_day.day)])
@@ -138,7 +139,7 @@ class USMarket:
         if foundFile:
             return maxdate
         # otherwise, let's start from one year ago
-        oneYearAgo = datetime.now(pytz.timezone('US/Eastern')) - timedelta(days = 366)
+        oneYearAgo = datetime.now(pytz.timezone('US/Eastern')) - timedelta(days = 712)
         return '-'.join([strWithZero(x) for x in [oneYearAgo.year, oneYearAgo.month, oneYearAgo.day]])
 
     # download .csv file for sym from yahoo finance
