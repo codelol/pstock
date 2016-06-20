@@ -187,6 +187,7 @@ class USMarket:
         if prev_history_ends < latest_trading_date:
             self.download_most_recent_weekly(sym, prev_history_ends, latest_trading_date)
         self.load_weekly_from_file(sym)
+        self.calculate_most_recent_weekly(sym)
 
 
     def download_most_recent_weekly(self, sym, prev_history_ends, latest_trading_date):
@@ -206,6 +207,44 @@ class USMarket:
 
     def load_weekly_from_file(self, sym):
         self.datasets_weekly[sym] = load_csv_from_files(sym + '-weekly-')
+
+    def calculate_most_recent_weekly(self, sym):
+        most_recent_week = get_monday_of_the_week(max(self.datasets_weekly[sym].keys()))
+        current_week_monday = get_monday_of_the_week(max(self.datasets_daily[sym].keys()))
+        while True:
+            nextweek_Monday = datetime.strptime(most_recent_week, '%Y-%m-%d') + timedelta(days = 7)
+            monday_str = '-'.join([strWithZero(x) for x in [nextweek_Monday.year, nextweek_Monday.month, nextweek_Monday.day]])
+            if monday_str > current_week_monday:
+                break
+            found = 0
+            for i in range(5):
+                day = nextweek_Monday + timedelta(days = i)
+                kstr = '-'.join([strWithZero(x) for x in [day.year, day.month, day.day]])
+                if kstr in self.datasets_daily[sym].keys():
+                    if found == 0:
+                        self.datasets_weekly[sym][monday_str] = \
+                            {'Date': monday_str,'Open': None, 'Close' : None, 'High' : None, 'Low' : None, 'Volume' : 0}
+
+                    found = found + 1
+                    data = self.datasets_weekly[sym][monday_str]
+                    if data['Open'] == None:
+                        data['Open'] =self.datasets_daily[sym][kstr]['Open']
+                    data['Close'] = self.datasets_daily[sym][kstr]['Close']
+
+                    high_float = float(self.datasets_daily[sym][kstr]['High'])
+                    if data['High'] == None or high_float > float(data['High']):
+                        data['High'] = str(high_float)
+
+                    low_float = float(self.datasets_daily[sym][kstr]['Low'])
+                    if data['Low'] == None or low_float < float(data['Low']):
+                        data['Low'] = str(low_float)
+
+                    data['Volume'] = str(float(data['Volume']) + float(self.datasets_daily[sym][kstr]['Volume']))
+            if found > 0:
+                # volume in weekly chart is 'avg'
+                self.datasets_weekly[sym][monday_str]['Volume'] = \
+                    str(int(float(self.datasets_weekly[sym][monday_str]['Volume']) / found))
+            most_recent_week = monday_str
 
     def fetchdata(self, frequency = 'daily'):
         touchFolder()
