@@ -174,6 +174,7 @@ class USMarket:
         t['Open']  = sdata.get_open()
         # t['Close'] = sdata.get_price()
         t['Close'] = gQuotes(sym)[0]['LastTradePrice'] # use google data for latest 'Close', which is more accurate
+        t['Volume'] = sdata.get_volume()
 
     def update_weekly(self, sym):
         self.update_daily(sym) #data of current week comes from weekly daily data
