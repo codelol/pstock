@@ -385,9 +385,9 @@ class ChartPatterns:
 def main() :
     watchlist = ['AAPL', 'GOOGL']
     print(watchlist)
-    marketData = USMarket(watchlist, 'daily')
+    marketData = USMarket(watchlist)
 
-    ta = ChartPatterns(watchlist, marketData.getData(), False, False)
+    ta = ChartPatterns(watchlist, marketData.getData('daily'), False, False)
     ta.run()
 
 if __name__ == '__main__' :

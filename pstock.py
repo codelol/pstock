@@ -36,9 +36,9 @@ def main() :
 
     watchlist = read_watchlist(args.filename)
     print(watchlist)
-    marketData = USMarket(watchlist, args.frequency)
+    marketData = USMarket(watchlist)
 
-    cp = ChartPatterns(watchlist, marketData.getData(), args.verbose, False)
+    cp = ChartPatterns(watchlist, marketData.getData('daily'), args.verbose, False)
     cp.run()
 
 if __name__ == '__main__' :

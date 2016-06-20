@@ -117,10 +117,10 @@ def construct_yahoo_link(sym, m1, d1, y1, m2, d2, y2, type):
     return ret
 
 class USMarket:
-    def __init__(self, watchlist, frequency):
+    def __init__(self, watchlist):
         self.watchlist = watchlist
-        self.datasets = {}
-        self.frequency = frequency
+        self.datasets_daily = {}
+        self.datasets_weeily = {}
 
     def update_daily(self, sym):
         prev_history_ends = self.get_latest_history_date(sym)
@@ -130,7 +130,6 @@ class USMarket:
             self.download_most_recent_daily(sym, prev_history_ends, latest_trading_date)
         self.load_daily_from_file(sym)
         self.fetch_current_data(sym)
-        pass
 
     # download .csv file for sym from yahoo finance
     # starting on prev_history_ends + 1
@@ -146,7 +145,7 @@ class USMarket:
             pass
 
     def load_daily_from_file(self, sym):
-        self.datasets[sym] = {}
+        self.datasets_daily[sym] = {}
         prefix = sym + '-daily-'
         foundFile = False
         for fname in os.listdir(foldername):
@@ -156,7 +155,7 @@ class USMarket:
                 with open(localfpath) as csvfile:
                     reader = csv.DictReader(csvfile)
                     for datapoint in reader:
-                        self.datasets[sym][datapoint['Date']] = datapoint
+                        self.datasets_daily[sym][datapoint['Date']] = datapoint
                     csvfile.close()
         assert(foundFile)
 
@@ -164,9 +163,9 @@ class USMarket:
     def fetch_current_data(self, sym):
         sdata = Share(sym)
         ts = get_latest_trading_date(get_cur_time())
-        if ts in self.datasets[sym].keys():
+        if ts in self.datasets_daily[sym].keys():
             return
-        self.datasets[sym][ts] = t = {}
+        self.datasets_daily[sym][ts] = t = {}
         t['Date']  = '3000-01-01' #debugging purposes, so we know this is current. This won't be saved to file
         t['High']  = sdata.get_days_high()
         t['Low']   = sdata.get_days_low()
@@ -175,7 +174,11 @@ class USMarket:
         t['Close'] = gQuotes(sym)[0]['LastTradePrice'] # use google data for latest 'Close', which is more accurate
 
     def update_weekly(self, sym):
-        self.update_daily(sym) #data of current week comes from weekly daily data
+        if len(self.datasets_daily) == 0:
+            print('update_daily')
+            self.update_daily(sym) #data of current week comes from weekly daily data
+        else:
+            print('update_daily skipped')
         prev_history_ends = self.get_latest_history_date(sym, 'weekly')
         latest_trading_date = get_latest_trading_date()
         assert(prev_history_ends <= latest_trading_date)
@@ -195,23 +198,23 @@ class USMarket:
         except:
             pass
 
-    def fetchdata(self):
+    def fetchdata(self, frequency = 'daily'):
         touchFolder()
-        if self.frequency == 'daily':
+        if frequency == 'daily':
             for sym in self.watchlist:
                 self.update_daily(sym)
 
-        elif self.frequency == 'weekly':
+        elif frequency == 'weekly':
             for sym in self.watchlist:
                 self.update_weekly(sym)
 
-    def getData(self):
-        self.fetchdata()
+    def getData(self, frequency = 'daily'):
+        self.fetchdata(frequency)
         sortedByDate = {}
         # return an array (instead of dict)
         # [0] is the most recent price point
         for sym in self.watchlist:
-            sortedByDate[sym] = [self.datasets[sym][date] for date in sorted(self.datasets[sym].keys(), reverse=True)]
+            sortedByDate[sym] = [self.datasets_daily[sym][date] for date in sorted(self.datasets_daily[sym].keys(), reverse=True)]
         return sortedByDate
 
     def get_latest_history_date(self, sym, frequency='daily'):
@@ -233,8 +236,9 @@ class USMarket:
 
 def test_weekly_data():
     watchlist = ['TSLA']
-    usm = USMarket(watchlist, 'weekly')
-    usm.fetchdata()
+    usm = USMarket(watchlist)
+    usm.fetchdata('weekly')
+    usm.fetchdata('weekly')
 
 def main() :
     test_weekly_data()
@@ -247,7 +251,7 @@ def main() :
 
     # dateSorted = {}
     # for sym in watchlist:
-    #     dateSorted[sym] = [usm.datasets[sym][date] for date in sorted(usm.datasets[sym].keys(), reverse=True)]
+    #     dateSorted[sym] = [usm.datasets_daily[sym][date] for date in sorted(usm.datasets_daily[sym].keys(), reverse=True)]
     #
     # ta = TA(watchlist, dateSorted, True)
     # ta.calculations()

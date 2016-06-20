@@ -32,8 +32,8 @@ def main():
     sym = 'TSLA'
     watchlist = [sym]
     print(watchlist)
-    marketData = USMarket(watchlist, 'daily')
-    priceHistory = marketData.getData()
+    marketData = USMarket(watchlist)
+    priceHistory = marketData.getData('daily')
     datapoints = [float(x['Close']) for x in priceHistory[sym]]
 
     mts = Metrics()
