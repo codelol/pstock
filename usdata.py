@@ -67,12 +67,15 @@ def get_cur_time():
         cur_time = cur_time - timedelta(minutes = (minutes + 60))
     return cur_time
 
-def get_last_trading_date():
-    cur_time = get_cur_time()
+def get_last_trading_date(s = None):
+    if s == None:
+        cur_time = get_cur_time()
+    else:
+        cur_time = s
     #find the most recent trading day if not today
     while True:
         wd = cur_time.weekday()
-        if wd == 0 or wd == 6: #Sunday or #Saturday
+        if wd == 5 or wd == 6: #Saturday or Sunday
             cur_time = cur_time - timedelta(days = 1)
             continue
 
@@ -81,10 +84,8 @@ def get_last_trading_date():
             cur_time = cur_time - timedelta(days = 1)
             continue
 
-        cur_time = cur_time - timedelta(days = 1)
         break
-    prev_day = cur_time - timedelta(days = 1)
-    ret = '-'.join([str(prev_day.year), strWithZero(prev_day.month), strWithZero(prev_day.day)])
+    ret = '-'.join([str(cur_time.year), strWithZero(cur_time.month), strWithZero(cur_time.day)])
     return ret
 
 def construct_yahoo_link(sym, m1, d1, y1, m2, d2, y2, type):
@@ -173,10 +174,10 @@ class USMarket:
 
     def fetch_current_data(self, sym):
         sdata = Share(sym)
-        cur_time = get_cur_time()
-        ts = '-'.join([str(cur_time.year), strWithZero(cur_time.month), strWithZero(cur_time.day)])
-        self.datasets[sym][ts] = \
-        t = {}
+        ts = get_last_trading_date(get_cur_time())
+        if ts in self.datasets[sym].keys():
+            return
+        self.datasets[sym][ts] = t = {}
         t['Date']  = '3000-01-01' #debugging purposes, so we know this is current. This won't be saved to file
         t['High']  = sdata.get_days_high()
         t['Low']   = sdata.get_days_low()
