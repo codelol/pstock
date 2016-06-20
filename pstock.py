@@ -30,8 +30,15 @@ def format_red(str):
 def print_red(str):
     print(format_red(str))
 
+def test():
+    watchlist = ['BABA']
+    marketData = USMarket(watchlist)
+    cp = ChartPatterns(watchlist, marketData.getData('weekly'), False, False)
+    cp.run()
 
 def main() :
+    test()
+    return
     args = arg_parser()
 
     watchlist = read_watchlist(args.filename)

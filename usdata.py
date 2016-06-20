@@ -267,7 +267,7 @@ class USMarket:
         # return an array (instead of dict)
         # [0] is the most recent price point
         for sym in self.watchlist:
-            sortedByDate[sym] = [self.datasets_daily[sym][date] for date in sorted(dataset[sym].keys(), reverse=True)]
+            sortedByDate[sym] = [dataset[sym][date] for date in sorted(dataset[sym].keys(), reverse=True)]
         return sortedByDate
 
     def get_latest_history_date(self, sym, frequency='daily'):
