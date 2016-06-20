@@ -37,8 +37,6 @@ def test():
     cp.run()
 
 def main() :
-    test()
-    return
     args = arg_parser()
 
     watchlist = read_watchlist(args.filename)
