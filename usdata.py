@@ -138,8 +138,6 @@ class USMarket:
         self.datasets_weekly = {}
 
     def update_daily(self, sym):
-        if len(self.datasets_daily) != 0:
-            return
         prev_history_ends = self.get_latest_history_date(sym)
         latest_trading_date = get_latest_trading_date()
         assert(prev_history_ends <= latest_trading_date)
@@ -178,8 +176,6 @@ class USMarket:
         t['Close'] = gQuotes(sym)[0]['LastTradePrice'] # use google data for latest 'Close', which is more accurate
 
     def update_weekly(self, sym):
-        if len(self.datasets_weekly) != 0:
-            return
         self.update_daily(sym) #data of current week comes from weekly daily data
         prev_history_ends = self.get_latest_history_date(sym, 'weekly')
         latest_trading_date = get_latest_trading_date()
@@ -249,20 +245,28 @@ class USMarket:
     def fetchdata(self, frequency = 'daily'):
         touchFolder()
         if frequency == 'daily':
+            if len(self.datasets_daily) != 0:
+                return
             for sym in self.watchlist:
                 self.update_daily(sym)
 
         elif frequency == 'weekly':
+            if len(self.datasets_weekly) != 0:
+                return
             for sym in self.watchlist:
                 self.update_weekly(sym)
 
     def getData(self, frequency = 'daily'):
         self.fetchdata(frequency)
+        if frequency == 'daily':
+            dataset = self.datasets_daily
+        elif frequency == 'weekly':
+            dataset = self.datasets_weekly
         sortedByDate = {}
         # return an array (instead of dict)
         # [0] is the most recent price point
         for sym in self.watchlist:
-            sortedByDate[sym] = [self.datasets_daily[sym][date] for date in sorted(self.datasets_daily[sym].keys(), reverse=True)]
+            sortedByDate[sym] = [self.datasets_daily[sym][date] for date in sorted(dataset[sym].keys(), reverse=True)]
         return sortedByDate
 
     def get_latest_history_date(self, sym, frequency='daily'):
