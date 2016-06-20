@@ -193,8 +193,10 @@ class USMarket:
         #start is the 'next' Monday
         start = datetime.strptime(get_monday_of_the_week(prev_history_ends), '%Y-%m-%d') + \
                 timedelta(days = 7)
-        end = datetime.strptime(latest_trading_date, '%Y-%m-%d')
-        endingMonday = get_monday_of_the_week(latest_trading_date)
+        #ends on the 2nd most recent Sunday
+        end = datetime.strptime(get_monday_of_the_week(latest_trading_date), '%Y-%m-%d') - \
+                timedelta(days = 8)
+        endingMonday = get_monday_of_the_week('-'.join([str(end.year), strWithZero(end.month), strWithZero(end.day)]))
         link = construct_yahoo_link(sym, start.month, start.day, start.year, end.month, end.day, end.year, 'weekly')
         localfpath = os.path.join(foldername, sym+'-weekly-'+endingMonday+'.csv')
         try:
