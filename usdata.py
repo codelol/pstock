@@ -116,13 +116,30 @@ def construct_yahoo_link(sym, m1, d1, y1, m2, d2, y2, type):
     ret = ret + '&ignore=.csv'
     return ret
 
+def load_csv_from_files(prefix):
+    foundFile = False
+    ret = {}
+    for fname in os.listdir(foldername):
+        if fnmatch.fnmatch(fname, prefix + '*'):
+            foundFile = True
+            localfpath = os.path.join(foldername, fname)
+            with open(localfpath) as csvfile:
+                reader = csv.DictReader(csvfile)
+                for datapoint in reader:
+                    ret[datapoint['Date']] = datapoint
+                csvfile.close()
+    assert(foundFile)
+    return ret
+
 class USMarket:
     def __init__(self, watchlist):
         self.watchlist = watchlist
         self.datasets_daily = {}
-        self.datasets_weeily = {}
+        self.datasets_weekly = {}
 
     def update_daily(self, sym):
+        if len(self.datasets_daily) != 0:
+            return
         prev_history_ends = self.get_latest_history_date(sym)
         latest_trading_date = get_latest_trading_date()
         assert(prev_history_ends <= latest_trading_date)
@@ -145,20 +162,7 @@ class USMarket:
             pass
 
     def load_daily_from_file(self, sym):
-        self.datasets_daily[sym] = {}
-        prefix = sym + '-daily-'
-        foundFile = False
-        for fname in os.listdir(foldername):
-            if fnmatch.fnmatch(fname, prefix + '*'):
-                foundFile = True
-                localfpath = os.path.join(foldername, fname)
-                with open(localfpath) as csvfile:
-                    reader = csv.DictReader(csvfile)
-                    for datapoint in reader:
-                        self.datasets_daily[sym][datapoint['Date']] = datapoint
-                    csvfile.close()
-        assert(foundFile)
-
+        self.datasets_daily[sym] = load_csv_from_files(sym + '-daily-')
 
     def fetch_current_data(self, sym):
         sdata = Share(sym)
@@ -174,19 +178,19 @@ class USMarket:
         t['Close'] = gQuotes(sym)[0]['LastTradePrice'] # use google data for latest 'Close', which is more accurate
 
     def update_weekly(self, sym):
-        if len(self.datasets_daily) == 0:
-            print('update_daily')
-            self.update_daily(sym) #data of current week comes from weekly daily data
-        else:
-            print('update_daily skipped')
+        if len(self.datasets_weekly) != 0:
+            return
+        self.update_daily(sym) #data of current week comes from weekly daily data
         prev_history_ends = self.get_latest_history_date(sym, 'weekly')
         latest_trading_date = get_latest_trading_date()
         assert(prev_history_ends <= latest_trading_date)
         if prev_history_ends < latest_trading_date:
             self.download_most_recent_weekly(sym, prev_history_ends, latest_trading_date)
+        self.load_weekly_from_file(sym)
 
 
     def download_most_recent_weekly(self, sym, prev_history_ends, latest_trading_date):
+        #start is the 'next' Monday
         start = datetime.strptime(get_monday_of_the_week(prev_history_ends), '%Y-%m-%d') + \
                 timedelta(days = 7)
         end = datetime.strptime(latest_trading_date, '%Y-%m-%d')
@@ -197,6 +201,9 @@ class USMarket:
             urllib.request.urlretrieve(link, localfpath)
         except:
             pass
+
+    def load_weekly_from_file(self, sym):
+        self.datasets_weekly[sym] = load_csv_from_files(sym + '-weekly-')
 
     def fetchdata(self, frequency = 'daily'):
         touchFolder()
