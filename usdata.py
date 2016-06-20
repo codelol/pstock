@@ -67,7 +67,7 @@ def get_cur_time():
         cur_time = cur_time - timedelta(minutes = (minutes + 60))
     return cur_time
 
-def get_last_trading_date(s = None):
+def get_latest_trading_date(s = None):
     if s == None:
         cur_time = get_cur_time()
     else:
@@ -87,6 +87,12 @@ def get_last_trading_date(s = None):
         break
     ret = '-'.join([str(cur_time.year), strWithZero(cur_time.month), strWithZero(cur_time.day)])
     return ret
+
+def get_monday_of_the_week(dateStr):
+    date = datetime.strptime(dateStr, '%Y-%m-%d')
+    wd = date.weekday()
+    date = date - timedelta(days = wd)
+    return '-'.join([str(date.year), strWithZero(date.month), strWithZero(date.day)])
 
 def construct_yahoo_link(sym, m1, d1, y1, m2, d2, y2, type):
     #on yahoo, month starts at 00, instead of 01
@@ -117,40 +123,23 @@ class USMarket:
         self.frequency = frequency
 
     def update_daily(self, sym):
-        prev_history_ends = self.get_latest_daily_history_date(sym)
-        last_trading_day = get_last_trading_date()
-        assert(prev_history_ends <= last_trading_day)
-        if prev_history_ends < last_trading_day:
-            self.download_most_recent_daily(sym, prev_history_ends, last_trading_day)
+        prev_history_ends = self.get_latest_history_date(sym)
+        latest_trading_date = get_latest_trading_date()
+        assert(prev_history_ends <= latest_trading_date)
+        if prev_history_ends < latest_trading_date:
+            self.download_most_recent_daily(sym, prev_history_ends, latest_trading_date)
         self.load_daily_from_file(sym)
         self.fetch_current_data(sym)
         pass
 
-    def get_latest_daily_history_date(self, sym):
-        prefix = sym + '-daily-'
-        maxdate = '1900-01-01'
-        foundFile = False
-        for fname in os.listdir(foldername):
-            if fnmatch.fnmatch(fname, prefix + '*'):
-                foundFile = True
-                datestr_no_prefix = fname[len(prefix):]
-                datestr = datestr_no_prefix[:len(maxdate)] #remove suffix '.csv'
-                if datestr > maxdate:
-                    maxdate = datestr
-        if foundFile:
-            return maxdate
-        # otherwise, let's start from one year ago
-        oneYearAgo = datetime.now(pytz.timezone('US/Eastern')) - timedelta(days = 712)
-        return '-'.join([strWithZero(x) for x in [oneYearAgo.year, oneYearAgo.month, oneYearAgo.day]])
-
     # download .csv file for sym from yahoo finance
     # starting on prev_history_ends + 1
-    # ending on last_trading_day
-    def download_most_recent_daily(self, sym, prev_history_ends, last_trading_day):
+    # ending on latest_trading_date
+    def download_most_recent_daily(self, sym, prev_history_ends, latest_trading_date):
         start = datetime.strptime(prev_history_ends, '%Y-%m-%d') + timedelta(days = 1)
-        end = datetime.strptime(last_trading_day, '%Y-%m-%d')
+        end = datetime.strptime(latest_trading_date, '%Y-%m-%d')
         link = construct_yahoo_link(sym, start.month, start.day, start.year, end.month, end.day, end.year, 'daily')
-        localfpath = os.path.join(foldername, sym+'-daily-'+last_trading_day+'.csv')
+        localfpath = os.path.join(foldername, sym+'-daily-'+latest_trading_date+'.csv')
         try:
             urllib.request.urlretrieve(link, localfpath)
         except:
@@ -174,7 +163,7 @@ class USMarket:
 
     def fetch_current_data(self, sym):
         sdata = Share(sym)
-        ts = get_last_trading_date(get_cur_time())
+        ts = get_latest_trading_date(get_cur_time())
         if ts in self.datasets[sym].keys():
             return
         self.datasets[sym][ts] = t = {}
@@ -185,14 +174,29 @@ class USMarket:
         # t['Close'] = sdata.get_price()
         t['Close'] = gQuotes(sym)[0]['LastTradePrice'] # use google data for latest 'Close', which is more accurate
 
-    def construct_yahoo_link(self, sym, ):
-        pass
-
     def update_weekly(self, sym):
-        # fpath = foldername + '/' + sym + '-weekly'
-        pass
+        self.update_daily(sym) #data of current week comes from weekly daily data
+        prev_history_ends = self.get_latest_history_date(sym, 'weekly')
+        latest_trading_date = get_latest_trading_date()
+        assert(prev_history_ends <= latest_trading_date)
+        if prev_history_ends < latest_trading_date:
+            self.download_most_recent_weekly(sym, prev_history_ends, latest_trading_date)
+
+
+    def download_most_recent_weekly(self, sym, prev_history_ends, latest_trading_date):
+        start = datetime.strptime(get_monday_of_the_week(prev_history_ends), '%Y-%m-%d') + \
+                timedelta(days = 7)
+        end = datetime.strptime(latest_trading_date, '%Y-%m-%d')
+        endingMonday = get_monday_of_the_week(latest_trading_date)
+        link = construct_yahoo_link(sym, start.month, start.day, start.year, end.month, end.day, end.year, 'weekly')
+        localfpath = os.path.join(foldername, sym+'-weekly-'+endingMonday+'.csv')
+        try:
+            urllib.request.urlretrieve(link, localfpath)
+        except:
+            pass
 
     def fetchdata(self):
+        touchFolder()
         if self.frequency == 'daily':
             for sym in self.watchlist:
                 self.update_daily(sym)
@@ -202,7 +206,6 @@ class USMarket:
                 self.update_weekly(sym)
 
     def getData(self):
-        touchFolder()
         self.fetchdata()
         sortedByDate = {}
         # return an array (instead of dict)
@@ -211,14 +214,36 @@ class USMarket:
             sortedByDate[sym] = [self.datasets[sym][date] for date in sorted(self.datasets[sym].keys(), reverse=True)]
         return sortedByDate
 
-def main() :
-    args = arg_parser()
-    watchlist = read_watchlist(args.filename)
-    print(watchlist)
+    def get_latest_history_date(self, sym, frequency='daily'):
+        prefix = sym + '-' + frequency + '-'
+        maxdate = '1900-01-01'
+        foundFile = False
+        for fname in os.listdir(foldername):
+            if fnmatch.fnmatch(fname, prefix + '*'):
+                foundFile = True
+                datestr_no_prefix = fname[len(prefix):]
+                datestr = datestr_no_prefix[:len(maxdate)] #remove suffix '.csv'
+                if datestr > maxdate:
+                    maxdate = datestr
+        if foundFile:
+            return maxdate
+        # otherwise, let's start from a fixed time ago
+        longBefore = datetime.now(pytz.timezone('US/Eastern')) - timedelta(days = 712)
+        return '-'.join([strWithZero(x) for x in [longBefore.year, longBefore.month, longBefore.day]])
 
-    touchFolder()
-    usm = USMarket(watchlist, args.frequency)
+def test_weekly_data():
+    watchlist = ['TSLA']
+    usm = USMarket(watchlist, 'weekly')
     usm.fetchdata()
+
+def main() :
+    test_weekly_data()
+    # args = arg_parser()
+    # watchlist = read_watchlist(args.filename)
+    # print(watchlist)
+    #
+    # usm = USMarket(watchlist, args.frequency)
+    # usm.fetchdata()
 
     # dateSorted = {}
     # for sym in watchlist:
