@@ -1,6 +1,6 @@
 """
 Package for metrics calculations
-datapoints[0] is the most recent price
+closePrices[0] is the most recent price
 """
 
 from usdata import USMarket
@@ -8,6 +8,8 @@ from usdata import USMarket
 class Metrics:
     # exponential moving average
     def ema(self, datapoints, days) :
+        if days == 1:
+            return datapoints
         ratio = float(2 / (days + 1))
         cur_ema = 0
         emas = []
@@ -28,17 +30,28 @@ class Metrics:
         histogram = [(x - y) for x, y in zip(macdline, signalLine)]
         return histogram
 
+    def forceIndex(self, closePrices, volumes, d = 13):
+        assert(len(closePrices) == len(volumes))
+        index1 = []
+        for i in range(len(closePrices) - 1):
+            index1.append((closePrices[i] - closePrices[i+1] * volumes[i]))
+        return self.ema(index1, d)
+
 def main():
-    sym = 'TSLA'
+    sym = 'AAPL'
     watchlist = [sym]
     print(watchlist)
     marketData = USMarket(watchlist)
     priceHistory, missing = marketData.getData('daily')
-    datapoints = [float(x['Close']) for x in priceHistory[sym]]
+    closePrices = [float(x['Close']) for x in priceHistory[sym]]
+    volumes = [float(x['Volume']) for x in priceHistory[sym]]
 
     mts = Metrics()
-    macd_histo = mts.macd(datapoints)
-    print(str(macd_histo))
+    # macd_histo = mts.macd(closePrices)
+    # print(str(macd_histo))
+
+    forceIndex = mts.forceIndex(closePrices, volumes)
+    print(str(forceIndex))
 
 if __name__ == '__main__' :
     main()

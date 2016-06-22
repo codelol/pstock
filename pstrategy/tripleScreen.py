@@ -16,7 +16,7 @@ class TripleScreen:
 
         picked2 = []
         for sym in picked1:
-            if self.screen2_should_long(sym, self.datasetLong):
+            if self.screen2_should_long(sym, self.datasetMid):
                 picked2.append(sym)
 
         return picked2
@@ -29,7 +29,11 @@ class TripleScreen:
         return False
 
     def screen2_should_long(self, sym, data):
-        # closePrices = [float(x['Close']) for x in data[sym]]
+        closePrices = [float(x['Close']) for x in data[sym]]
+        volumes = [float(x['Volume']) for x in data[sym]]
+        forceIndex = Metrics().forceIndex(closePrices, volumes)
+        if forceIndex[0] > forceIndex[1] and forceIndex[1] <= 0:
+            return True
         return True
 
     def run(self):

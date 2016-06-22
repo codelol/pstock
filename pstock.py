@@ -2,7 +2,7 @@
 
 import argparse
 from usdata import USMarket
-from pstrategy import ChartPatterns
+from pstrategy import ChartPatterns, TripleScreen
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='pstock stock analysis tool in python')
@@ -44,12 +44,22 @@ def main() :
     watchlist = read_watchlist(args.filename)
     print(watchlist)
     marketData = USMarket(watchlist)
-    dataset, missing = marketData.getData(args.frequency)
-    symset = [sym for sym in watchlist if sym not in missing]
-    cp = ChartPatterns(symset, dataset, args.verbose, False)
-    cp.run()
-    if len(missing) > 0:
-        print('missing info for: ' + str(missing));
+    # dataset, missing = marketData.getData(args.frequency)
+    # symset = [sym for sym in watchlist if sym not in missing]
+    # cp = ChartPatterns(symset, dataset, args.verbose, False)
+    # cp.run()
+
+    daily, missing1 = marketData.getData('daily')
+    weekly, missing2 = marketData.getData('weekly')
+    all_missing = set(missing1) | set(missing2)
+    if len(all_missing) > 0:
+        print('symbols missing data: ' + str(all_missing))
+
+    symlist = [sym for sym in watchlist if sym not in all_missing]
+    ts = TripleScreen(symlist, weekly, daily)
+    decision = ts.run()
+    print('long: '+str(decision['long']))
+    print('short: '+str(decision['short']))
 
 if __name__ == '__main__' :
     main()
