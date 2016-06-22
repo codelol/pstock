@@ -387,7 +387,8 @@ def main() :
     print(watchlist)
     marketData = USMarket(watchlist)
 
-    ta = ChartPatterns(watchlist, marketData.getData('daily'), False, False)
+    data, missing = marketData.getData('daily')
+    ta = ChartPatterns(watchlist, data, False, False)
     ta.run()
 
 if __name__ == '__main__' :
