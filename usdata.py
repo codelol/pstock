@@ -136,6 +136,8 @@ class USMarket:
         self.watchlist = watchlist
         self.datasets_daily = {}
         self.datasets_weekly = {}
+        self.missing_daily = []
+        self.missing_weekly = []
 
     def update_daily(self, sym):
         prev_history_ends = self.get_latest_history_date(sym)
@@ -248,27 +250,38 @@ class USMarket:
         if frequency == 'daily':
             if len(self.datasets_daily) != 0:
                 return
+            self.missing_daily = []
             for sym in self.watchlist:
-                self.update_daily(sym)
+                try:
+                    self.update_daily(sym)
+                except:
+                    self.missing_daily.append(sym)
 
         elif frequency == 'weekly':
             if len(self.datasets_weekly) != 0:
                 return
+            self.missing_weekly = []
             for sym in self.watchlist:
-                self.update_weekly(sym)
+                try:
+                    self.update_weekly(sym)
+                except:
+                    self.missing_weekly.append(sym)
 
     def getData(self, frequency = 'daily'):
         self.fetchdata(frequency)
+        missing = []
         if frequency == 'daily':
             dataset = self.datasets_daily
+            missing = self.missing_daily
         elif frequency == 'weekly':
             dataset = self.datasets_weekly
+            missing = self.missing_weekly
         sortedByDate = {}
         # return an array (instead of dict)
         # [0] is the most recent price point
-        for sym in self.watchlist:
+        for sym in list(set(self.watchlist) - set(missing)):
             sortedByDate[sym] = [dataset[sym][date] for date in sorted(dataset[sym].keys(), reverse=True)]
-        return sortedByDate
+        return sortedByDate, missing
 
     def get_latest_history_date(self, sym, frequency='daily'):
         prefix = sym + '-' + frequency + '-'

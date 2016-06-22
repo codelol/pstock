@@ -33,7 +33,9 @@ def print_red(str):
 def test():
     watchlist = ['BABA']
     marketData = USMarket(watchlist)
-    cp = ChartPatterns(watchlist, marketData.getData('weekly'), False, False)
+    dataset, missing = marketData.getData('daily')
+    symset = [sym for sym in watchlist if sym not in missing]
+    cp = ChartPatterns(symset, dataset, False, False)
     cp.run()
 
 def main() :
@@ -42,8 +44,12 @@ def main() :
     watchlist = read_watchlist(args.filename)
     print(watchlist)
     marketData = USMarket(watchlist)
-    cp = ChartPatterns(watchlist, marketData.getData(args.frequency), args.verbose, False)
+    dataset, missing = marketData.getData(args.frequency)
+    symset = [sym for sym in watchlist if sym not in missing]
+    cp = ChartPatterns(symset, dataset, args.verbose, False)
     cp.run()
+    if len(missing) > 0:
+        print('missing info for: ' + str(missing));
 
 if __name__ == '__main__' :
     main()

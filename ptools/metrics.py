@@ -33,7 +33,7 @@ def main():
     watchlist = [sym]
     print(watchlist)
     marketData = USMarket(watchlist)
-    priceHistory = marketData.getData('daily')
+    priceHistory, missing = marketData.getData('daily')
     datapoints = [float(x['Close']) for x in priceHistory[sym]]
 
     mts = Metrics()
