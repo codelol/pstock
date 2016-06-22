@@ -58,8 +58,13 @@ def main() :
     symlist = [sym for sym in watchlist if sym not in all_missing]
     ts = TripleScreen(symlist, weekly, daily)
     decision = ts.run()
-    print('long: '+str(decision['long']))
-    print('short: '+str(decision['short']))
+    longStr = shortStr = '(None)'
+    if decision['long'] != None:
+        longStr = ' '.join(decision['long'])
+    if decision['short'] != None:
+        shortStr = ' '.join(decision['short'])
+    print('long: '+ longStr)
+    print('short: '+ shortStr)
 
 if __name__ == '__main__' :
     main()
