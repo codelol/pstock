@@ -30,6 +30,9 @@ def format_red(str):
 def print_red(str):
     print(format_red(str))
 
+def print_progress(msg):
+    print('[PROGRESS] '+msg)
+
 def test():
     watchlist = ['BABA']
     marketData = USMarket(watchlist)
@@ -44,7 +47,9 @@ def main() :
     print(watchlist)
 
     marketData = USMarket(watchlist)
+    print_progress('requesting daily data')
     daily, missing1 = marketData.getData('daily')
+    print_progress('requesting weekly data')
     weekly, missing2 = marketData.getData('weekly')
     all_missing = set(missing1) | set(missing2)
     if len(all_missing) > 0:

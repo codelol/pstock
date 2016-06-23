@@ -16,7 +16,7 @@ class TripleScreen:
 
         picked2 = []
         for sym in picked1:
-            if self.forceindex_should_long(sym, self.datasetMid):
+            if self.rsi_should_long(sym, self.datasetMid):
                 picked2.append(sym)
 
         return picked2
@@ -33,9 +33,16 @@ class TripleScreen:
         closePrices = [float(x['Close']) for x in data[sym]]
         volumes = [float(x['Volume']) for x in data[sym]]
         forceIndex = Metrics().forceIndex(closePrices, volumes)
-        if forceIndex[0] > forceIndex[1] and forceIndex[1] <= 0:
+        if forceIndex[0] > forceIndex[1] and forceIndex[1] < 0:
             return True
-        return True
+        return False
+
+    def rsi_should_long(self, sym, data):
+        closePrices = [float(x['Close']) for x in data[sym]]
+        rsiArray = Metrics().rsi(closePrices)
+        if rsiArray[0] > rsiArray[1] and rsiArray[1] < 30:
+            return True
+        return False
 
     def run(self):
         ret = {'long': None, 'short': None}
@@ -44,7 +51,7 @@ class TripleScreen:
 
 
 def main() :
-    watchlist = ['AAPL', 'JD']
+    watchlist = ['AAPL', 'JD', 'ORCL']
     print(watchlist)
     marketData = USMarket(watchlist)
 
