@@ -44,6 +44,40 @@ class ChartPatterns:
                       self.rule_price_new_high,
                       self.rule_price_gaps,
                       self.rule_price_range_compare]
+        self.cal_exponential_moving_average()
+
+    def cal_exponential_moving_average(self) :
+        for sym in self.symbols :
+            try:
+                datapoints = [float(x['Close']) for x in self.datasets[sym]]
+                for days in self.interests_ema :
+                    self.metrics[sym]['ema'+str(days)] = Metrics().ema(datapoints, days)
+                    self.aggregates[sym]['ema'+str(days)] = self.metrics[sym]['ema'+str(days)][0]
+                    self.aggregates[sym]['ema'+str(days)+'_prev'] = self.metrics[sym]['ema'+str(days)][1]
+            except:
+                self.symbols.remove(sym)
+                self.missing_data.append(sym)
+
+    def rule_large_negative_followed_by_emall_positive(self):
+        picked = []
+        for sym in self.symbols:
+            cur_open = float(self.datasets[sym][0]['Open'])
+            cur_close = float(self.datasets[sym][0]['Close'])
+            prev_open = float(self.datasets[sym][1]['Open'])
+            prev_close = float(self.datasets[sym][1]['Close'])
+            all_ema = [self.aggregates[sym]['ema'+str(x)] for x in self.interests_ema]
+            # previous day is negative, and current day is positive
+            if (prev_close < prev_open and cur_close > cur_open
+                # current price must be at a low level, e.g., ema5 < ema20
+                and all_ema[0] < all_ema[2]
+                # negative range is at least 1.5 times larger than positive
+                and abs(prev_close - prev_open) > 1.5 * abs(cur_close - cur_open)
+                # opening price of today is gapped down
+                and cur_open < prev_close):
+                    picked.append(sym)
+        if len(picked) > 0:
+            return {'name': '插入线，待入线，切入线', 'value': picked}
+        return None
 
     def convert_into_weekly_prices(self):
         self.stashed_daily_history = self.datasets
@@ -76,18 +110,6 @@ class ChartPatterns:
                 for days in self.interests_ema :
                     self.aggregates[sym]['ema'+str(days)] = sum([float(x['Close']) for x in self.datasets[sym][0:days]]) / days
                     self.aggregates[sym]['ema'+str(days)+'_prev'] = sum([float(x['Close']) for x in self.datasets[sym][1:days+1]]) / days
-            except:
-                self.symbols.remove(sym)
-                self.missing_data.append(sym)
-
-    def cal_exponential_moving_average(self) :
-        for sym in self.symbols :
-            try:
-                datapoints = [float(x['Close']) for x in self.datasets[sym]]
-                for days in self.interests_ema :
-                    self.metrics[sym]['ema'] = Metrics().ema(datapoints, days)
-                    self.aggregates[sym]['ema'+str(days)] = self.metrics[sym]['ema'][0]
-                    self.aggregates[sym]['ema'+str(days)+'_prev'] = self.metrics[sym]['ema'][1]
             except:
                 self.symbols.remove(sym)
                 self.missing_data.append(sym)
@@ -136,22 +158,6 @@ class ChartPatterns:
             if abs(tmp_low - cur_low) < cur_close * 0.002:
                 self.buy_signals += '\n' + sym + ': double needle bottom'
                 return
-
-    def rule_large_negative_followed_by_emall_positive(self, sym):
-        cur_open = float(self.datasets[sym][0]['Open'])
-        cur_close = float(self.datasets[sym][0]['Close'])
-        prev_open = float(self.datasets[sym][1]['Open'])
-        prev_close = float(self.datasets[sym][1]['Close'])
-        all_ema = [self.aggregates[sym]['ema'+str(x)] for x in self.interests_ema]
-        # previous day is negative, and current day is positive
-        if (prev_close < prev_open and cur_close > cur_open
-            # current price must be at a low level, e.g., ema5 < ema20
-            and all_ema[0] < all_ema[2]
-            # negative range is at least 1.5 times larger than positive
-            and abs(prev_close - prev_open) > 1.5 * abs(cur_close - cur_open)
-            # opening price of today is gapped down
-            and cur_open < prev_close):
-                self.buy_signals += '\n' + sym + ': 插入线，待入线，切入线'
 
     #3-day pattern: positive, negative, positive. This is a possible buy signal
     def rule_long_side_canon(self, sym):
@@ -367,7 +373,7 @@ class ChartPatterns:
 
         print(tabulate(rows, headers))
 
-    def run(self):
+    def run_old(self):
         if self.weekly_mode:
             self.convert_into_weekly_prices()
 
@@ -381,6 +387,12 @@ class ChartPatterns:
         print(self.buy_signals)
         print(self.sell_signals)
         print(self.other_signals)
+
+    def run(self):
+        result = self.rule_large_negative_followed_by_emall_positive()
+        if result != None:
+            symbolStr = ' '.join(result['value'])
+            print(result['name'] + ': '+ symbolStr)
 
 def main() :
     watchlist = ['AAPL', 'GOOGL']

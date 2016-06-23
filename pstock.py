@@ -40,22 +40,26 @@ def test():
 
 def main() :
     args = arg_parser()
-
     watchlist = read_watchlist(args.filename)
     print(watchlist)
-    marketData = USMarket(watchlist)
-    # dataset, missing = marketData.getData(args.frequency)
-    # symset = [sym for sym in watchlist if sym not in missing]
-    # cp = ChartPatterns(symset, dataset, args.verbose, False)
-    # cp.run()
 
+    marketData = USMarket(watchlist)
     daily, missing1 = marketData.getData('daily')
     weekly, missing2 = marketData.getData('weekly')
     all_missing = set(missing1) | set(missing2)
     if len(all_missing) > 0:
         print('symbols missing data: ' + str(all_missing))
-
     symlist = [sym for sym in watchlist if sym not in all_missing]
+
+    print(' ----------- ChartPatterns Weekly -------------')
+    cp_weekly = ChartPatterns(symlist, weekly, args.verbose, False)
+    cp_weekly.run()
+
+    print(' ----------- ChartPatterns Daily  -------------')
+    cp_daily = ChartPatterns(symlist, daily, args.verbose, False)
+    cp_daily.run()
+
+    print(' ----------- TripleScreen Screen  -------------')
     ts = TripleScreen(symlist, weekly, daily)
     decision = ts.run()
     longStr = shortStr = '(None)'
