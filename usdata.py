@@ -177,6 +177,9 @@ class USMarket:
         # t['Close'] = sdata.get_price()
         t['Close'] = gQuotes(sym)[0]['LastTradePrice'] # use google data for latest 'Close', which is more accurate
         t['Volume'] = sdata.get_volume()
+        for k in t.keys():
+            if t[k] == None:
+                raise Exception('missing most recent daily', sym)
 
     def update_weekly(self, sym):
         self.update_daily(sym) #data of current week comes from weekly daily data
