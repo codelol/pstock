@@ -24,8 +24,8 @@ class TripleScreen:
     def pulsesystem_should_long(self, sym, data):
         closePrices = [float(x['Close']) for x in data[sym]]
         macd_h = Metrics().macd(closePrices)
-        ema5 = Metrics().ema(closePrices, 5)
-        if macd_h[0] >= macd_h[1] and macd_h[1] <= 0 and ema5[0] >= ema5[1]:
+        ema = Metrics().ema(closePrices, 10)
+        if macd_h[0] >= macd_h[1] and macd_h[1] <= 0 and ema[0] >= ema[1]:
             return True
         return False
 
@@ -41,7 +41,7 @@ class TripleScreen:
         closePrices = [float(x['Close']) for x in data[sym]]
         rsiArray = Metrics().rsi(closePrices)
         for i in range(10):
-            if rsiArray[i] > rsiArray[i+1] and rsiArray[i+1] < 30:
+            if rsiArray[i] > rsiArray[i+1] and rsiArray[i+1] < 40:
                 return True
         return False
 
