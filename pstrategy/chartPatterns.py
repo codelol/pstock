@@ -85,6 +85,10 @@ class ChartPatterns:
     def pullback_after_breakthrough(self):
         picked = []
         for sym in self.symbols:
+            closePrices = [float(x['Close']) for x in self.datasets[sym]]
+            # or price is increasing
+            if closePrices[0] > closePrices[1]:
+                continue
             emaArray0 = self.metrics[sym]['ema' + str(self.interests_ema[0])]
             emaArray1 = self.metrics[sym]['ema' + str(self.interests_ema[1])]
             assert(len(emaArray0) == len(emaArray1))
@@ -466,3 +470,4 @@ def main() :
 
 if __name__ == '__main__' :
     main()
+
