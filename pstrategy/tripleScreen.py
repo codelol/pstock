@@ -40,8 +40,9 @@ class TripleScreen:
     def rsi_should_long(self, sym, data):
         closePrices = [float(x['Close']) for x in data[sym]]
         rsiArray = Metrics().rsi(closePrices)
-        if rsiArray[0] > rsiArray[1] and rsiArray[1] < 30:
-            return True
+        for i in range(10):
+            if rsiArray[i] > rsiArray[i+1] and rsiArray[i+1] < 30:
+                return True
         return False
 
     def run(self):
