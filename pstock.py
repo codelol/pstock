@@ -59,9 +59,9 @@ def main() :
     ts = TripleScreen(symlist, weekly, daily)
     decision = ts.run()
     longStr = shortStr = '(None)'
-    if decision['long'] != None:
+    if decision['long'] != None and len(decision['long']) > 0:
         longStr = ' '.join(decision['long'])
-    if decision['short'] != None:
+    if decision['short'] != None and len(decision['short']) > 0:
         shortStr = ' '.join(decision['short'])
     print('long: '+ longStr)
     print('short: '+ shortStr)

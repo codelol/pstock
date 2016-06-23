@@ -11,24 +11,25 @@ class TripleScreen:
     def long_opportunities(self):
         picked1 = []
         for sym in self.watchlist:
-            if self.screen1_should_long(sym, self.datasetLong):
+            if self.pulsesystem_should_long(sym, self.datasetLong):
                 picked1.append(sym)
 
         picked2 = []
         for sym in picked1:
-            if self.screen2_should_long(sym, self.datasetMid):
+            if self.forceindex_should_long(sym, self.datasetMid):
                 picked2.append(sym)
 
         return picked2
 
-    def screen1_should_long(self, sym, data):
+    def pulsesystem_should_long(self, sym, data):
         closePrices = [float(x['Close']) for x in data[sym]]
         macd_h = Metrics().macd(closePrices)
-        if macd_h[0] > macd_h[1] and macd_h[1] < 0:
+        ema5 = Metrics().ema(closePrices, 5)
+        if macd_h[0] >= macd_h[1] and macd_h[1] <= 0 and ema5[0] >= ema5[1]:
             return True
         return False
 
-    def screen2_should_long(self, sym, data):
+    def forceindex_should_long(self, sym, data):
         closePrices = [float(x['Close']) for x in data[sym]]
         volumes = [float(x['Volume']) for x in data[sym]]
         forceIndex = Metrics().forceIndex(closePrices, volumes)
