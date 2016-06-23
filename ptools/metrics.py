@@ -38,42 +38,45 @@ class Metrics:
         return self.ema(index1, d)
 
     def rsi(self, datapoints, d = 14):
-        if (len(datapoints) < d + 1):
+        dsize = len(datapoints)
+        if (dsize < d + 1):
             return None
-        initialGain = initialLoss = 0
-        for i in range(1, d):
-            if datapoints[i] > datapoints[i-1]:
-                initialGain += datapoints[i] - datapoints[i-1]
-            elif datapoints[i] < datapoints[i-1]:
-                initialLoss += datapoints[i-1] - datapoints[i]
-        gain = loss = 0
-        RSarray = []
-        for i in range(d, len(datapoints)):
-            curGain = curLoss = 0
-            if datapoints[i] > datapoints[i-1]:
-                curGain += datapoints[i] - datapoints[i-1]
-            elif datapoints[i] < datapoints[i-1]:
-                curLoss += datapoints[i-1] - datapoints[i]
-            if i == d:
-                gain = (initialGain + curGain) / d
-                loss = (initialLoss + curLoss) / d
+        rsize = dsize - 1
+        gains = []
+        losses = []
+        for i in range(rsize):
+            if datapoints[i] > datapoints[i+1]:
+                gains.append(datapoints[i] - datapoints[i+1])
+                losses.append(0)
+            elif datapoints[i] < datapoints[i+1]:
+                losses.append(datapoints[i+1] - datapoints[i])
+                gains.append(0)
             else:
-                gain = (gain * (d-1) + curGain) / d
-                loss = (loss * (d-1) + curLoss) / d
-            RSarray.insert(0, gain / loss)
+                gains.append(0)
+                losses.append(0)
+        avggains = [sum(gains[rsize - d : rsize]) / d]
+        avglosses = [sum(losses[rsize - d : rsize]) / d]
+        for i in reversed(range(rsize - d)):
+            avggains.insert(0, (avggains[0] * 13 + gains[i]) / 14)
+            avglosses.insert(0, (avglosses[0] * 13 + losses[i]) /14)
 
-        RSIarray = [100 - 100 / (1 + x) for x in RSarray]
-        return RSIarray
+        RSarray = []
+        RSI =[]
+        for i in range(dsize - d):
+            rs = avggains[i] / avglosses[i]
+            RSarray.append(rs)
+            RSI.append(100 - 100 / (1 + rs))
+        return RSI
 
 
 def testRSI():
-    data = [44.34, 44.09, 44.15, 43.61, 44.33, 44.83, 45.10, 45.42, 45.84, 46.08, 45.89, 46.03, 45.61, 46.28,
-            46.28, 46.00, 46.03]
+    data = list(reversed([44.34, 44.09, 44.15, 43.61, 44.33, 44.83, 45.10, 45.42, 45.84, 46.08, 45.89, 46.03, 45.61, 46.28,
+            46.28, 46.00, 46.03]))
     result = (Metrics().rsi(data))
-    assert(len(result) == 3)
+    assert(len(result) == len(data) - 14)
     assert(result[0] > 66.480 and result[0] < 66.490)
     assert(result[1] > 66.240 and result[1] < 66.250)
-    assert(result[2] > 70.460 and result[0] < 70.470)
+    assert(result[2] > 70.460 and result[2] < 70.470)
     print('testRSI passed:' + str(result))
 
 def main():
@@ -83,14 +86,10 @@ def main():
     marketData = USMarket(watchlist)
     priceHistory, missing = marketData.getData('daily')
     closePrices = [float(x['Close']) for x in priceHistory[sym]]
-    volumes = [float(x['Volume']) for x in priceHistory[sym]]
 
     mts = Metrics()
-    # macd_histo = mts.macd(closePrices)
-    # print(str(macd_histo))
-
-    # forceIndex = mts.forceIndex(closePrices, volumes)
-    # print(str(forceIndex))
+    rsi = mts.rsi(closePrices)
+    print(str(rsi))
 
 if __name__ == '__main__' :
     main()
