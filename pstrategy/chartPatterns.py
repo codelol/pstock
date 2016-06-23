@@ -79,6 +79,57 @@ class ChartPatterns:
             return {'name': '插入线，待入线，切入线', 'value': picked}
         return None
 
+    # 在长期的股价低迷之后,出现了突破,短期均线超过长期均线.但是随后出现调整.
+    # 这个调整伴随着缩量, 可能是shorter trap,可以介入.
+    # 因为交易量数据的不准确, 程序中不读取交易量
+    def pullback_after_breakthrough(self):
+        picked = []
+        for sym in self.symbols:
+            emaArray0 = self.metrics[sym]['ema' + str(self.interests_ema[0])]
+            emaArray1 = self.metrics[sym]['ema' + str(self.interests_ema[1])]
+            assert(len(emaArray0) == len(emaArray1))
+            emaGaps = [(a - b) for a, b in zip(emaArray0, emaArray1)]
+            # short-term ema is still above long-term, no pull-back yet.
+            if emaGaps[0] > 0:
+                continue
+            history = []
+            i = 0
+
+            while i < len(emaGaps):
+                if emaGaps[i] > 0:
+                    break
+                i += 1
+            if i == len(emaGaps):
+                continue
+            history.append(i)
+
+            while i < len(emaGaps):
+                if emaGaps[i] < 0:
+                    break
+                i += 1
+            if i == len(emaGaps):
+                continue
+            history.append(i - sum(history))
+
+            while i < len(emaGaps):
+                if emaGaps[i] > 0:
+                    break
+                i += 1
+            if i == len(emaGaps):
+                continue
+            history.append(i - sum(history))
+
+            #history[2]: initially the days when ema_0 < ema_1
+            #history[1]: then the days when ema_0 > ema_1
+            #history[1]: now pullback --the days when ema_0 > ema_1
+            assert(len(history) == 3)
+            if history[2] < 10 or  history[2] < history[1] * 1.5: #initial phase is too short, non-solid base
+                continue
+            picked.append(sym)
+        if len(picked) > 0:
+            return {'name': '突破后的回调(检查是否缩量)', 'value': picked}
+        return None
+
     def convert_into_weekly_prices(self):
         self.stashed_daily_history = self.datasets
         tmp_history = {}
@@ -389,10 +440,20 @@ class ChartPatterns:
         print(self.other_signals)
 
     def run(self):
+        all_results = []
+
         result = self.rule_large_negative_followed_by_emall_positive()
         if result != None:
+            all_results.append(result)
+
+        result = self.pullback_after_breakthrough()
+        if result != None:
+            all_results.append(result)
+
+        for result in all_results:
             symbolStr = ' '.join(result['value'])
             print(result['name'] + ': '+ symbolStr)
+
 
 def main() :
     watchlist = ['AAPL', 'GOOGL']
