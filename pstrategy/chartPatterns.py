@@ -29,7 +29,7 @@ class ChartPatterns:
         self.metrics = {sym : {} for sym in watchlist}
         self.datasets = datasets
         self.stashed_daily_history = datasets
-        self.interests_ema = [5, 10, 20]
+        self.interests_ema = [7, 14, 30]
         self.buy_signals = ''
         self.sell_signals = ''
         self.other_signals = ''
@@ -86,11 +86,15 @@ class ChartPatterns:
         picked = []
         for sym in self.symbols:
             closePrices = [float(x['Close']) for x in self.datasets[sym]]
-            # or price is increasing
+            # not pullback if price is increasing
             if closePrices[0] > closePrices[1]:
                 continue
             emaArray0 = self.metrics[sym]['ema' + str(self.interests_ema[0])]
             emaArray1 = self.metrics[sym]['ema' + str(self.interests_ema[1])]
+            emaArray2 = self.metrics[sym]['ema' + str(self.interests_ema[2])]
+            # price dropped below 'long'-term ema, too much to be a pullback
+            if closePrices[0] < emaArray2[0]:
+                continue
             assert(len(emaArray0) == len(emaArray1))
             emaGaps = [(a - b) for a, b in zip(emaArray0, emaArray1)]
             # short-term ema is still above long-term, no pull-back yet.
@@ -460,13 +464,14 @@ class ChartPatterns:
 
 
 def main() :
-    watchlist = ['AAPL', 'GOOGL']
+    watchlist = ['AAPL', 'GPRO', 'PANW']
     print(watchlist)
     marketData = USMarket(watchlist)
 
     data, missing = marketData.getData('daily')
     ta = ChartPatterns(watchlist, data, False, False)
     ta.run()
+    print('missing? '+str(missing))
 
 if __name__ == '__main__' :
     main()
