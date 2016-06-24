@@ -10,8 +10,8 @@ def arg_parser():
                         help='file that contains a list of ticker symbols')
     parser.add_argument('-v', dest='verbose', action='store_true', default=False,
                             help='specify verbose exception information')
-    parser.add_argument('-q', dest='frequency', default='daily',
-                            help='daily (default), weekly or monthly data')
+    parser.add_argument('-s', dest='symbol',
+                        help='check one specified symbol, avoid reading symbols from file')
     args = parser.parse_args()
     return args;
 
@@ -43,8 +43,10 @@ def test():
 
 def main() :
     args = arg_parser()
-    watchlist = read_watchlist(args.filename)
-    print(watchlist)
+    if args.symbol != None:
+        watchlist = [args.symbol]
+    else:
+        watchlist = read_watchlist(args.filename)
 
     marketData = USMarket(watchlist)
     print_progress('requesting daily data')
