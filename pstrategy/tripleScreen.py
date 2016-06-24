@@ -26,7 +26,7 @@ class TripleScreen:
         macd_h = Metrics().macd(closePrices)
         ema = Metrics().ema(closePrices, 10)
         # macd rising and ema10 rising
-        if macd_h[0] >= macd_h[1] and ema[0] >= ema[1]:
+        if macd_h[0] >= macd_h[1] and macd_h[0] < 0 and ema[0] >= ema[1]:
             return True
         return False
 
@@ -34,9 +34,8 @@ class TripleScreen:
         closePrices = [float(x['Close']) for x in data[sym]]
         macd_h = Metrics().macd(closePrices)
         ema = Metrics().ema(closePrices, 30)
-        if macd_h[0] >= macd_h[1] and \
-           macd_h[1] <= 0 and \
-           closePrices[0] > ema[0]:
+        # (1) macd-h going up; (2) still negative; (3) price declining but still above ema
+        if macd_h[0] >= macd_h[1] and macd_h[1] < 0 and closePrices[1] > closePrices[0] > ema[0]:
            #price is above ema30
             return True
         return False
