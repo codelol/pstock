@@ -24,6 +24,8 @@ class TripleScreen:
     def pulsesystem_should_long(self, sym, data):
         closePrices = [float(x['Close']) for x in data[sym]]
         macd_h = Metrics().macd(closePrices)
+        if macd_h == None: # not enough data
+            return False
         ema = Metrics().ema(closePrices, 10)
         # macd rising and ema10 rising
         if macd_h[0] >= macd_h[1] and macd_h[0] < 0 and ema[0] >= ema[1]:
@@ -64,7 +66,7 @@ class TripleScreen:
 
 
 def main() :
-    watchlist = ['AAPL', 'JD', 'ORCL']
+    watchlist = ['SQ']
     print(watchlist)
     marketData = USMarket(watchlist)
 

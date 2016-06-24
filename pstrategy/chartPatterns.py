@@ -95,7 +95,6 @@ class ChartPatterns:
             # price dropped below 'long'-term ema, too much to be a pullback
             if closePrices[0] < emaArray2[0]:
                 continue
-            assert(len(emaArray0) == len(emaArray1))
             emaGaps = [(a - b) for a, b in zip(emaArray0, emaArray1)]
             # short-term ema is still above long-term, no pull-back yet.
             if emaGaps[0] > 0:

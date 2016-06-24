@@ -30,6 +30,8 @@ class Metrics:
         ema_d2 = self.ema(datapoints, d2)
         macdline = [(x - y) for x, y in zip(ema_d1, ema_d2)]
         signalLine = self.ema(macdline, d3)
+        if signalLine == None:
+            return None
         histogram = [(x - y) for x, y in zip(macdline, signalLine)]
         return histogram
 
