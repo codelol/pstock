@@ -37,7 +37,7 @@ class Metrics:
         assert(len(closePrices) == len(volumes))
         index1 = []
         for i in range(len(closePrices) - 1):
-            index1.append((closePrices[i] - closePrices[i+1] * volumes[i]))
+            index1.append((closePrices[i] - closePrices[i+1]) * volumes[i])
         fi = self.ema(index1, d)
         return fi
 
@@ -81,7 +81,12 @@ def testema():
     print(str(result))
 
 def testForceIndex():
-    prices = list(reversed[14.33, 14.23, 13.98, 13.96, 13.93, 13.84])
+    prices = list(reversed([14.33, 14.23, 13.98, 13.96, 13.93, 13.84, 13.99, 14.31, 14.51, 14.46, 14.61, 14.48, 14.53, 14.56]))
+    vol = list(reversed([0, 45579, 66285, 51761, 69341, 41631, 73499, 55427, 61082, 33325, 39191, 51128, 46505, 44562]))
+    fi1 = Metrics().forceIndex(prices, vol, 1)
+    assert(len(fi1) == len(prices) - 1)
+    assert(fi1[0] > 1336 and fi1[0] < 1337)
+    print(str(fi1))
 
 def testRSI():
     data = list(reversed([44.34, 44.09, 44.15, 43.61, 44.33, 44.83, 45.10, 45.42, 45.84, 46.08, 45.89, 46.03, 45.61, 46.28,
@@ -94,18 +99,24 @@ def testRSI():
     print('testRSI passed:' + str(result))
 
 def main():
-    sym = 'GOOGL'
+    sym = 'AAPL'
     watchlist = [sym]
     print(watchlist)
     marketData = USMarket(watchlist)
     priceHistory, missing = marketData.getData('daily')
     closePrices = [float(x['Close']) for x in priceHistory[sym]]
+    volumes = [float(x['Volume']) for x in priceHistory[sym]]
 
     mts = Metrics()
-    rsi = mts.rsi(closePrices)
-    print(str(rsi))
+    # rsi = mts.rsi(closePrices)
+    # print(str(rsi))
+    ema13 = mts.ema(closePrices, 13)
+    print(str(ema13))
+    fi = mts.forceIndex(closePrices, volumes)
+    print(str(fi))
 
 if __name__ == '__main__' :
-    # main()
-    testema()
+    main()
+    # testema()
     # testRSI()
+    # testForceIndex()
