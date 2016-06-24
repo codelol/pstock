@@ -16,7 +16,7 @@ class TripleScreen:
 
         picked2 = []
         for sym in picked1:
-            if self.rsi_should_long(sym, self.datasetMid):
+            if self.macd_buy_point(sym, self.datasetMid):
                 picked2.append(sym)
 
         return picked2
@@ -25,9 +25,22 @@ class TripleScreen:
         closePrices = [float(x['Close']) for x in data[sym]]
         macd_h = Metrics().macd(closePrices)
         ema = Metrics().ema(closePrices, 10)
-        if macd_h[0] >= macd_h[1] and macd_h[1] <= 0 and ema[0] >= ema[1]:
+        # macd rising and ema10 rising
+        if macd_h[0] >= macd_h[1] and ema[0] >= ema[1]:
             return True
         return False
+
+    def macd_buy_point(self, sym, data):
+        closePrices = [float(x['Close']) for x in data[sym]]
+        macd_h = Metrics().macd(closePrices)
+        ema = Metrics().ema(closePrices, 30)
+        if macd_h[0] >= macd_h[1] and \
+           macd_h[1] <= 0 and \
+           closePrices[0] > ema[0]:
+           #price is above ema30
+            return True
+        return False
+
 
     def forceindex_should_long(self, sym, data):
         closePrices = [float(x['Close']) for x in data[sym]]
