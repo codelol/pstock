@@ -10,12 +10,15 @@ class Metrics:
     def ema(self, datapoints, days) :
         if days == 1:
             return datapoints
+        dsize = len(datapoints)
+        if dsize < days:
+            return None
         ratio = float(2 / (days + 1))
-        cur_ema = 0
-        emas = []
-        for i in reversed(range(len(datapoints))):
-            cur_ema = datapoints[i] * ratio + cur_ema * (1 - ratio)
-            emas.insert(0, cur_ema)
+        prev_ema = float(sum(datapoints[dsize - days:dsize]) / days)
+        emas = [prev_ema]
+        for i in reversed(range(dsize - days)):
+            prev_ema = datapoints[i] * ratio + prev_ema * (1 - ratio)
+            emas.insert(0, prev_ema)
         return emas
 
     # Calculate a 12-day EMA of closing prices.
@@ -35,7 +38,8 @@ class Metrics:
         index1 = []
         for i in range(len(closePrices) - 1):
             index1.append((closePrices[i] - closePrices[i+1] * volumes[i]))
-        return self.ema(index1, d)
+        fi = self.ema(index1, d)
+        return fi
 
     def rsi(self, datapoints, d = 14):
         dsize = len(datapoints)
@@ -68,6 +72,16 @@ class Metrics:
             RSI.append(100 - 100 / (1 + rs))
         return RSI
 
+def testema():
+    datapoints = list(reversed([22.27, 22.19, 22.08, 22.17, 22.18, 22.13, 22.23, 22.43, 22.24,
+                      22.29, 22.15, 22.39]))
+    result = Metrics().ema(datapoints, 10)
+    assert(len(result) == 3)
+    assert(result[0] > 22.241 and result[0] < 22.242)
+    print(str(result))
+
+def testForceIndex():
+    prices = list(reversed[14.33, 14.23, 13.98, 13.96, 13.93, 13.84])
 
 def testRSI():
     data = list(reversed([44.34, 44.09, 44.15, 43.61, 44.33, 44.83, 45.10, 45.42, 45.84, 46.08, 45.89, 46.03, 45.61, 46.28,
@@ -92,5 +106,6 @@ def main():
     print(str(rsi))
 
 if __name__ == '__main__' :
-    main()
+    # main()
+    testema()
     # testRSI()
