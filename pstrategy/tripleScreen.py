@@ -2,7 +2,7 @@ from ptools import Metrics
 from usdata import USMarket
 
 class TripleScreen:
-    def __init__(self, watchlist, datasetLong, datasetMid, datasetShort = None):
+    def __init__(self, watchlist, datasetLong, datasetMid = None, datasetShort = None):
         self.watchlist = watchlist
         self.datasetLong = datasetLong
         self.datasetMid = datasetMid
@@ -13,6 +13,8 @@ class TripleScreen:
         for sym in self.watchlist:
             if self.pulsesystem_should_long(sym, self.datasetLong):
                 picked1.append(sym)
+        if self.datasetMid == None:
+            return picked1
 
         picked2 = []
         for sym in picked1:
@@ -66,18 +68,19 @@ class TripleScreen:
 
 
 def main() :
-    watchlist = ['SQ']
+    watchlist = ['AAPL', 'ORCL', 'GOOGL', 'TSLA', 'MSFT', 'VRSN']
     print(watchlist)
     marketData = USMarket(watchlist)
 
-    daily, missing1 = marketData.getData('daily')
-    weekly, missing2 = marketData.getData('weekly')
+    weekly, missing1 = marketData.getData('weekly')
+    # daily, missing2 = marketData.getData('daily')
+    missing2 = []
     all_missing = set(missing1) | set(missing2)
     if len(all_missing) > 0:
         print('symbols missing data: ' + str(all_missing))
 
     symlist = [sym for sym in watchlist if sym not in all_missing]
-    ts = TripleScreen(symlist, weekly, daily)
+    ts = TripleScreen(symlist, weekly)
     decision = ts.run()
     print(str(decision))
 
