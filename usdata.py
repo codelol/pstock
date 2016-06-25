@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 import csv, os, argparse, fnmatch, pytz, urllib
 
 foldername = 'datafiles-us'
+max_history_year=5 #if no history data exists, download the last 5 years of history
 
 # update this field periodically
 futureholidays = ['2016-07-04', '2016-09-05', '2016-11-24', '2016-12-25', '2016-12-26',
@@ -301,7 +302,7 @@ class USMarket:
         if foundFile:
             return maxdate
         # otherwise, let's start from a fixed time ago
-        longBefore = datetime.now(pytz.timezone('US/Eastern')) - timedelta(days = 712)
+        longBefore = datetime.now(pytz.timezone('US/Eastern')) - timedelta(days = (max_history_year * 365))
         return '-'.join([strWithZero(x) for x in [longBefore.year, longBefore.month, longBefore.day]])
 
 def test_weekly_data():
