@@ -13,6 +13,7 @@ class TripleScreen:
         for sym in self.watchlist:
             if self.pulsesystem_should_long(sym, self.datasetLong):
                 picked1.append(sym)
+
         if self.datasetMid == None:
             return picked1
 
@@ -29,8 +30,8 @@ class TripleScreen:
         if macd_h == None: # not enough data
             return False
         ema = Metrics().ema(closePrices, 10)
-        # macd rising and ema10 rising
-        if macd_h[0] >= macd_h[1] and macd_h[0] < 0 and ema[0] >= ema[1]:
+        # macd rising and ema starts to both rise
+        if macd_h[0] >= macd_h[1] and ema[0] >= ema[1] and (macd_h[1] < macd_h[2] or ema[1] < ema[2]):
             return True
         return False
 
@@ -39,7 +40,7 @@ class TripleScreen:
         macd_h = Metrics().macd(closePrices)
         ema = Metrics().ema(closePrices, 30)
         # (1) macd-h going up; (2) still negative; (3) price declining but still above ema
-        if macd_h[0] >= macd_h[1] and macd_h[1] < 0 and closePrices[1] > closePrices[0] > ema[0]:
+        if macd_h[0] >= macd_h[1] and closePrices[0] > max(closePrices[1], ema[0]):
            #price is above ema30
             return True
         return False
@@ -68,19 +69,17 @@ class TripleScreen:
 
 
 def main() :
-    watchlist = ['AAPL', 'ORCL', 'GOOGL', 'TSLA', 'MSFT', 'VRSN']
-    print(watchlist)
-    marketData = USMarket(watchlist)
+    watchlist = ['ORBC']
+    marketData = USMarket(watchlist, '2016-06-19')
 
     weekly, missing1 = marketData.getData('weekly')
-    # daily, missing2 = marketData.getData('daily')
-    missing2 = []
+    daily, missing2 = marketData.getData('daily')
     all_missing = set(missing1) | set(missing2)
     if len(all_missing) > 0:
         print('symbols missing data: ' + str(all_missing))
 
     symlist = [sym for sym in watchlist if sym not in all_missing]
-    ts = TripleScreen(symlist, weekly)
+    ts = TripleScreen(symlist, weekly, daily)
     decision = ts.run()
     print(str(decision))
 
