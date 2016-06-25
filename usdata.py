@@ -132,8 +132,9 @@ def load_csv_from_files(prefix):
     return ret
 
 class USMarket:
-    def __init__(self, watchlist):
+    def __init__(self, watchlist, endDate = '9999-99-99'):
         self.watchlist = watchlist
+        self.endDate = endDate
         self.datasets_daily = {}
         self.datasets_weekly = {}
         self.missing_daily = []
@@ -143,7 +144,7 @@ class USMarket:
         prev_history_ends = self.get_latest_history_date(sym)
         latest_trading_date = get_latest_trading_date()
         assert(prev_history_ends <= latest_trading_date)
-        if prev_history_ends < latest_trading_date:
+        if prev_history_ends < min(self.endDate, latest_trading_date):
             self.download_most_recent_daily(sym, prev_history_ends, latest_trading_date)
         self.load_daily_from_file(sym)
         self.fetch_current_data(sym)
@@ -167,7 +168,7 @@ class USMarket:
     def fetch_current_data(self, sym):
         sdata = Share(sym)
         ts = get_latest_trading_date(get_cur_time())
-        if ts in self.datasets_daily[sym].keys():
+        if ts in self.datasets_daily[sym].keys() or ts > self.endDate:
             return
         self.datasets_daily[sym][ts] = t = {}
         t['Date']  = '3000-01-01' #debugging purposes, so we know this is current. This won't be saved to file
@@ -186,7 +187,7 @@ class USMarket:
         prev_history_ends = self.get_latest_history_date(sym, 'weekly')
         latest_trading_date = get_latest_trading_date()
         assert(prev_history_ends <= latest_trading_date)
-        if prev_history_ends < latest_trading_date:
+        if prev_history_ends < min(self.endDate, latest_trading_date):
             self.download_most_recent_weekly(sym, prev_history_ends, latest_trading_date)
         self.load_weekly_from_file(sym)
         self.calculate_most_recent_weekly(sym)
@@ -283,7 +284,7 @@ class USMarket:
         # return an array (instead of dict)
         # [0] is the most recent price point
         for sym in list(set(self.watchlist) - set(missing)):
-            sortedByDate[sym] = [dataset[sym][date] for date in sorted(dataset[sym].keys(), reverse=True)]
+            sortedByDate[sym] = [dataset[sym][date] for date in sorted(dataset[sym].keys(), reverse=True) if date <= self.endDate]
         return sortedByDate, missing
 
     def get_latest_history_date(self, sym, frequency='daily'):
@@ -305,9 +306,11 @@ class USMarket:
 
 def test_weekly_data():
     watchlist = ['TSLA']
-    usm = USMarket(watchlist)
-    usm.fetchdata('weekly')
-    usm.fetchdata('weekly')
+    usm = USMarket(watchlist, '2016-01-04')
+    daily, missing1 = usm.getData('daily')
+    weekly, missing2 = usm.getData('weekly')
+    print(str(daily))
+    print(str(weekly))
 
 def main() :
     test_weekly_data()
