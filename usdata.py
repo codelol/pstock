@@ -18,6 +18,7 @@ http://real-chart.finance.yahoo.com/table.csv?s=TSLA&a=05&b=29&c=2015&d=05&e=15&
 from yahoo_finance import Share
 from googlefinance import getQuotes as gQuotes
 from datetime import datetime, timedelta
+from tqdm import tqdm
 import csv, os, argparse, fnmatch, pytz, urllib
 
 foldername = 'datafiles-us'
@@ -256,7 +257,7 @@ class USMarket:
             if len(self.datasets_daily) != 0:
                 return
             self.missing_daily = []
-            for sym in self.watchlist:
+            for sym in tqdm(self.watchlist, desc='daily chart', unit=' Symbol'):
                 try:
                     self.update_daily(sym)
                 except:
@@ -266,7 +267,7 @@ class USMarket:
             if len(self.datasets_weekly) != 0:
                 return
             self.missing_weekly = []
-            for sym in self.watchlist:
+            for sym in tqdm(self.watchlist, desc='weekly chart', unit=' Symbol'):
                 try:
                     self.update_weekly(sym)
                 except:
