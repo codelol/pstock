@@ -22,6 +22,7 @@ class ChartPatterns:
         self.market_stopped = False
         self.symbols = watchlist
         self.missing_data = []
+        self.missing_analysis = []
         self.verbose = verbose
         self.weekly_mode = weekly_mode
         self.tu = 'week' if weekly_mode else 'day'
@@ -61,20 +62,24 @@ class ChartPatterns:
     def rule_large_negative_followed_by_emall_positive(self):
         picked = []
         for sym in self.symbols:
-            cur_open = float(self.datasets[sym][0]['Open'])
-            cur_close = float(self.datasets[sym][0]['Close'])
-            prev_open = float(self.datasets[sym][1]['Open'])
-            prev_close = float(self.datasets[sym][1]['Close'])
-            all_ema = [self.aggregates[sym]['ema'+str(x)] for x in self.interests_ema]
-            # previous day is negative, and current day is positive
-            if (prev_close < prev_open and cur_close > cur_open
-                # current price must be at a low level, e.g., ema5 < ema20
-                and all_ema[0] < all_ema[2]
-                # negative range is at least 1.5 times larger than positive
-                and abs(prev_close - prev_open) > 1.5 * abs(cur_close - cur_open)
-                # opening price of today is gapped down
-                and cur_open < prev_close):
-                    picked.append(sym)
+            try:
+                cur_open = float(self.datasets[sym][0]['Open'])
+                cur_close = float(self.datasets[sym][0]['Close'])
+                prev_open = float(self.datasets[sym][1]['Open'])
+                prev_close = float(self.datasets[sym][1]['Close'])
+                all_ema = [self.metrics[sym]['ema'+str(x)][0] for x in self.interests_ema]
+                # previous day is negative, and current day is positive
+                if (prev_close < prev_open and cur_close > cur_open
+                    # current price must be at a low level, e.g., ema5 < ema20
+                    and all_ema[0] < all_ema[2]
+                    # negative range is at least 1.5 times larger than positive
+                    and abs(prev_close - prev_open) > 1.5 * abs(cur_close - cur_open)
+                    # opening price of today is gapped down
+                    and cur_open < prev_close):
+                        picked.append(sym)
+            except:
+                self.symbols.remove(sym)
+                self.missing_analysis.append(sym)
         if len(picked) > 0:
             return {'name': '插入线，待入线，切入线', 'value': picked}
         return None
@@ -460,6 +465,12 @@ class ChartPatterns:
         for result in all_results:
             symbolStr = ' '.join(result['value'])
             print(result['name'] + ': '+ symbolStr)
+
+        if len(self.missing_data) > 0:
+            print('missing data: ' + str(self.missing_data))
+
+        if len(self.missing_analysis) > 0:
+            print('skipped symbols: ' + str(self.missing_analysis))
 
 
 def main() :
