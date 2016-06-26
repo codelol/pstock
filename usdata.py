@@ -168,9 +168,14 @@ class USMarket:
         self.datasets_daily[sym] = load_csv_from_files(sym + '-daily-')
 
     def fetch_current_data(self, sym):
-        sdata = Share(sym)
         ts = get_latest_trading_date(get_cur_time())
         if ts in self.datasets_daily[sym].keys() or ts > self.endDate:
+            return
+        try:
+            sdata = Share(sym)
+            gquote = gQuotes(sym)
+        except:
+            # live with the fact that data from the most recent day is missing
             return
         self.datasets_daily[sym][ts] = t = {}
         t['Date']  = '3000-01-01' #debugging purposes, so we know this is current. This won't be saved to file
@@ -178,7 +183,7 @@ class USMarket:
         t['Low']   = sdata.get_days_low()
         t['Open']  = sdata.get_open()
         # t['Close'] = sdata.get_price()
-        t['Close'] = gQuotes(sym)[0]['LastTradePrice'] # use google data for latest 'Close', which is more accurate
+        t['Close'] = gquote[0]['LastTradePrice'] # use google data for latest 'Close', which is more accurate
         t['Volume'] = sdata.get_volume()
         for k in t.keys():
             if t[k] == None:
@@ -307,8 +312,9 @@ class USMarket:
         return '-'.join([strWithZero(x) for x in [longBefore.year, longBefore.month, longBefore.day]])
 
 def test_weekly_data():
-    watchlist = ['TSLA']
-    usm = USMarket(watchlist, '2016-01-04')
+    watchlist = ['AAPL']
+    # usm = USMarket(watchlist, '2016-01-04')
+    usm = USMarket(watchlist)
     daily, missing1 = usm.getData('daily')
     weekly, missing2 = usm.getData('weekly')
     print(str(daily))
