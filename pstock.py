@@ -66,8 +66,19 @@ def main() :
     cp_daily = ChartPatterns(symlist, daily, args.verbose, False)
     cp_daily.run()
 
-    print(' ----------- TripleScreen Screen  -------------')
+    print(' ----------- TripleScreen Screen (2 screens)---')
     ts = TripleScreen(symlist, weekly, daily)
+    decision = ts.run()
+    longStr = shortStr = '(None)'
+    if decision['long'] != None and len(decision['long']) > 0:
+        longStr = ' '.join(decision['long'])
+    if decision['short'] != None and len(decision['short']) > 0:
+        shortStr = ' '.join(decision['short'])
+    print('long: '+ longStr)
+    print('short: '+ shortStr)
+
+    print(' ----------- TripleScreen Screen (1 screen)----')
+    ts = TripleScreen(symlist, weekly)
     decision = ts.run()
     longStr = shortStr = '(None)'
     if decision['long'] != None and len(decision['long']) > 0:
