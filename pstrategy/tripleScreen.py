@@ -19,7 +19,8 @@ class TripleScreen:
 
         picked2 = []
         for sym in picked1:
-            if self.macd_buy_point(sym, self.datasetMid):
+            #if self.macd_buy_point(sym, self.datasetMid):
+            if self.forceindex_should_long(sym, self.datasetMid):
                 picked2.append(sym)
 
         return picked2
@@ -30,8 +31,9 @@ class TripleScreen:
         if macd_h == None: # not enough data
             return False
         ema = Metrics().ema(closePrices, 10)
-        # macd rising and ema starts to both rise
-        if macd_h[0] >= macd_h[1] and ema[0] >= ema[1] and (macd_h[1] < macd_h[2] or ema[1] < ema[2]):
+        sma_halfyear = Metrics().sma(closePrices, 26)
+        # macd and ema rising, and price is higher than half-year average
+        if macd_h[0] >= macd_h[1] and ema[0] >= ema[1] and closePrices[0] > sma_halfyear[0]:
             return True
         return False
 
@@ -50,7 +52,7 @@ class TripleScreen:
         closePrices = [float(x['Close']) for x in data[sym]]
         volumes = [float(x['Volume']) for x in data[sym]]
         forceIndex = Metrics().forceIndex(closePrices, volumes)
-        if forceIndex[0] > forceIndex[1] and forceIndex[1] < 0:
+        if forceIndex[0] < 0:
             return True
         return False
 
