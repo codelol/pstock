@@ -21,6 +21,19 @@ class Metrics:
             emas.insert(0, prev_ema)
         return emas
 
+    # simple moving average
+    def sma(self, datapoints, days):
+        if days == 1:
+            return datapoints
+        dsize = len(datapoints)
+        if dsize < days:
+            return None
+        smas = []
+        for i in range(dsize - days):
+            tmp = float(sum(datapoints[i:i+days]) / days)
+            smas.append(tmp)
+        return smas
+
     # Calculate a 12-day EMA of closing prices.
     # Calculate a 26-day EMA of closing prices.
     # Subtract the 26-day EMA from the 12-day EMA, and plot their difference as a solid line. This is the fast MACD line.
@@ -112,10 +125,13 @@ def main():
     mts = Metrics()
     # rsi = mts.rsi(closePrices)
     # print(str(rsi))
-    ema13 = mts.ema(closePrices, 13)
-    print(str(ema13))
-    fi = mts.forceIndex(closePrices, volumes)
-    print(str(fi))
+    # ema13 = mts.ema(closePrices, 13)
+    # print(str(ema13))
+    # fi = mts.forceIndex(closePrices, volumes)
+    # print(str(fi))
+    print(str(closePrices))
+    sma10 = mts.sma(closePrices, 10)
+    print(str(sma10))
 
 if __name__ == '__main__' :
     main()
