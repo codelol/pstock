@@ -1,6 +1,6 @@
 from tabulate import tabulate
 import traceback
-from ptools import Metrics
+from ptools import Metrics, Signals
 from usdata import USMarket
 
 def is_cross(prices):
@@ -58,6 +58,21 @@ class ChartPatterns:
             except:
                 self.symbols.remove(sym)
                 self.missing_data.append(sym)
+
+    def run_signals(self):
+        picked = []
+        s = Signals()
+        for sym in self.symbols:
+            try:
+                closePrices = [float(x['Close']) for x in self.datasets[sym]]
+                if s.MACD_bullish_divergence(closePrices) :
+                    picked.append(sym)
+            except:
+                self.symbols.remove(sym)
+                self.missing_analysis.append(sym)
+        if len(picked) > 0:
+            return {'name': 'MACD_bullish_divergence', 'value': picked}
+        return None
 
     def rule_large_negative_followed_by_emall_positive(self):
         picked = []
@@ -453,6 +468,10 @@ class ChartPatterns:
 
     def run(self):
         all_results = []
+
+        result = self.run_signals()
+        if result != None:
+            all_results.append(result)
 
         result = self.rule_large_negative_followed_by_emall_positive()
         if result != None:
