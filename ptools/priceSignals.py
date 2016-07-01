@@ -91,6 +91,8 @@ class PriceSignals:
         # 计算区间2的最高价,区间3的最低价, 以及区间3开始的价格(成为最初价)
             区间3的最低价必须低于最初价20%以上,否则不构成"股价低迷"
             区间2的最高价必须高于区间3最低价的5%,否则不成为突破
+            如果当前价低于区间2的最高价15%，则是下跌而不是回调
+            如果当前价格是三个区间的最低价，则是下跌而不是回调
         # 如果进行到这里,则可以看成是满足条件
     """
     def Type2_buy_point_pullback_after_breakthrough(self, closePrices):
@@ -129,7 +131,11 @@ class PriceSignals:
         init_price = closePrices[pos[2]]
         low_section3 = min(closePrices[pos[1]:pos[2]])
         high_section2 = max(closePrices[pos[0]:pos[1]])
-        if low_section3 > init_price * 0.8 or high_section2 < low_section3 * 1.05:
+        if low_section3 > init_price * 0.8 or high_section2 < low_section3 * 1.05 or \
+           closePrices[0] < high_section2 * 0.85:
+            return False
+
+        if closePrices[0] < min(closePrices[1:pos[2]]):
             return False
 
         return True

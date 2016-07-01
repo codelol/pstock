@@ -82,6 +82,7 @@ def main() :
     print('long: '+ longStr)
     print('short: '+ shortStr)
 
+    """
     print(' ----------- TripleScreen Screen (1 screen)----')
     ts = TripleScreen(symlist, weekly)
     decision = ts.run()
@@ -92,6 +93,7 @@ def main() :
         shortStr = ' '.join(decision['short'])
     print('long: '+ longStr)
     print('short: '+ shortStr)
+    """
 
 if __name__ == '__main__' :
     main()
