@@ -37,7 +37,7 @@ class ChartPatterns:
             return {'name': 'MACD_bullish_divergence', 'value': picked}
         return None
 
-    def rule_large_negative_followed_by_small_positive(self):
+    def large_negative_followed_by_small_positive(self):
         picked = []
         for sym in self.symbols:
             try:
@@ -127,13 +127,13 @@ class ChartPatterns:
         if result != None:
             all_results.append(result)
 
-        result = self.rule_large_negative_followed_by_small_positive()
-        if result != None:
-            all_results.append(result)
+        rules = [self.large_negative_followed_by_small_positive,
+                 self.pullback_after_breakthrough]
 
-        result = self.pullback_after_breakthrough()
-        if result != None:
-            all_results.append(result)
+        for rule in rules:
+            result = rule()
+            if result != None:
+                all_results.append(result)
 
         for result in all_results:
             symbolStr = ' '.join(result['value'])
