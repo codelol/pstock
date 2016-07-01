@@ -1,2 +1,2 @@
 from .metrics import Metrics
-from .signals import Signals
+from .priceSignals import PriceSignals
