@@ -8,8 +8,6 @@ def arg_parser():
     parser = argparse.ArgumentParser(description='pstock stock analysis tool in python')
     parser.add_argument('filename', type=str, nargs='*', default=['watchlist.txt'],
                         help='file that contains a list of ticker symbols')
-    parser.add_argument('-v', dest='verbose', action='store_true', default=False,
-                            help='specify verbose exception information')
     parser.add_argument('-d', dest='date', default=None,
                         help='ending date of history data for backtesting')
     parser.add_argument('-s', dest='symbol',
@@ -66,11 +64,11 @@ def main() :
     symlist = [sym for sym in watchlist if sym not in all_missing]
 
     print(' ----------- ChartPatterns Weekly -------------')
-    cp_weekly = ChartPatterns(symlist, weekly, args.verbose, False)
+    cp_weekly = ChartPatterns(symlist, weekly)
     cp_weekly.run()
 
     print(' ----------- ChartPatterns Daily  -------------')
-    cp_daily = ChartPatterns(symlist, daily, args.verbose, False)
+    cp_daily = ChartPatterns(symlist, daily)
     cp_daily.run()
 
     print(' ----------- TripleScreen Screen (2 screens)---')
