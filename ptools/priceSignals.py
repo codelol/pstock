@@ -108,21 +108,21 @@ class PriceSignals:
         idx = 0
 
         #locate end of section 1
-        while idx < dsize and ema_short[idx] < min(ema_mid[idx], ema_long[idx]):
+        while idx < dsize and ema_short[idx] < max(ema_mid[idx], ema_long[idx]):
             idx += 1
         if idx == dsize:
             return False
         pos.append(idx)
 
         #locate end of section 2
-        while idx < dsize and ema_short[idx] > max(ema_mid[idx], ema_long[idx]):
+        while idx < dsize and ema_short[idx] > min(ema_mid[idx], ema_long[idx]):
             idx += 1
         if idx == dsize:
             return False
         pos.append(idx)
 
         #locate end of section 3
-        while idx < dsize and min(ema_short[idx], ema_mid[idx]) < ema_long[idx]:
+        while idx < dsize and (ema_short[idx] < max(ema_mid[idx], ema_long[idx]) or ema_mid[idx] < ema_long[idx]) :
             idx += 1
         if idx == dsize:
             return False
