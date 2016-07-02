@@ -36,8 +36,8 @@ class ChartPatterns:
                 if s.Type2_buy_point_pullback_after_breakthrough(closePrices):
                     type2Picked.append(sym)
             except:
-                self.symbols.remove(sym)
-                self.missing_analysis.append(sym)
+                if sym not in self.missing_analysis:
+                    self.missing_analysis.append(sym)
         if len(type1Picked) > 0:
             resultsArray.append({'name':'一类买点', 'value':type1Picked})
         if len(type2Picked) > 0:
@@ -63,8 +63,8 @@ class ChartPatterns:
                     and cur_open < prev_close):
                         picked.append(sym)
             except:
-                self.symbols.remove(sym)
-                self.missing_analysis.append(sym)
+                if sym not in self.missing_analysis:
+                    self.missing_analysis.append(sym)
         if len(picked) > 0:
             return {'name': '插入线，待入线，切入线', 'value': picked}
         return None

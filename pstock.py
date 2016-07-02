@@ -34,11 +34,11 @@ def print_progress(msg):
     print('[PROGRESS] '+msg)
 
 def test():
-    watchlist = ['BABA']
-    marketData = USMarket(watchlist)
+    watchlist = ['USO']
+    marketData = USMarket(watchlist, '2016-04-05')
     dataset, missing = marketData.getData('daily')
     symset = [sym for sym in watchlist if sym not in missing]
-    cp = ChartPatterns(symset, dataset, False, False)
+    cp = ChartPatterns(symset, dataset)
     cp.run()
 
 def main() :
@@ -96,4 +96,5 @@ def main() :
     """
 
 if __name__ == '__main__' :
+    # test()
     main()
