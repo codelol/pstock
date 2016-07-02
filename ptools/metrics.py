@@ -41,6 +41,8 @@ class Metrics:
     def macd(self, datapoints, d1 = 12, d2 = 26, d3 = 9):
         ema_d1 = self.ema(datapoints, d1)
         ema_d2 = self.ema(datapoints, d2)
+        if ema_d1 == None or ema_d2 == None:
+            return None
         macdline = [(x - y) for x, y in zip(ema_d1, ema_d2)]
         signalLine = self.ema(macdline, d3)
         if signalLine == None:
