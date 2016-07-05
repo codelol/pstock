@@ -33,8 +33,11 @@ class TripleScreen:
         ema = Metrics().ema(closePrices, 10)
         sma_halfyear = Metrics().sma(closePrices, 26)
         # macd and ema rising, and price is higher than half-year average
-        if macd_h[0] >= macd_h[1] and ema[0] >= ema[1] and closePrices[0] > sma_halfyear[0]:
-            return True
+        try:
+            if macd_h[0] >= macd_h[1] and ema[0] >= ema[1] and closePrices[0] > sma_halfyear[0]:
+                return True
+        except:
+            pass
         return False
 
     def macd_buy_point(self, sym, data):
