@@ -48,20 +48,34 @@ class ChartPatterns:
         picked = []
         for sym in self.symbols:
             try:
-                cur_open = float(self.datasets[sym][0]['Open'])
-                cur_close = float(self.datasets[sym][0]['Close'])
-                prev_open = float(self.datasets[sym][1]['Open'])
-                prev_close = float(self.datasets[sym][1]['Close'])
-                all_ema = [self.metrics[sym]['ema'+str(x)][0] for x in self.interests_ema]
-                # previous day is negative, and current day is positive
-                if (prev_close < prev_open and cur_close > cur_open
-                    # current price must be at a low level, e.g., ema5 < ema20
-                    and all_ema[0] < all_ema[2]
-                    # negative range is at least 1.5 times larger than positive
-                    and abs(prev_close - prev_open) > 1.5 * abs(cur_close - cur_open)
-                    # opening price of today is gapped down
-                    and cur_open < prev_close):
-                        picked.append(sym)
+                openPrices = [float(x['Open']) for x in self.datasets[sym]]
+                closePrices = [float(x['Close']) for x in self.datasets[sym]]
+                #if current session is negative, pass
+                if closePrices[0] < openPrices[0]:
+                    continue
+                #if previous session is positive, pass
+                if closePrices[1] > openPrices[1]:
+                    continue
+                #if previous session didn't drop at least 1%, pass
+                if (openPrices[1] - closePrices[1]) < openPrices[1] * 0.01:
+                    continue
+                #if current session opened higher than last session's range, pass
+                if openPrices[0] >= min(openPrices[1], closePrices[1]):
+                    continue
+
+                #if any recent close price is than ema_5 or ema_10, pass
+                #a low price is necessary for profitable reversal
+                ema_5  = Metrics().ema(closePrices, 5)
+                ema_10 = Metrics().ema(closePrices, 10)
+                shouldSkip = False
+                for idx in range(1, 3):
+                    if closePrices[idx] > min(ema_5[idx], ema_10[idx]):
+                        shouldSkip = True
+                        break
+                if shouldSkip:
+                    continue
+
+                picked.append(sym)
             except:
                 if sym not in self.missing_analysis:
                     self.missing_analysis.append(sym)
