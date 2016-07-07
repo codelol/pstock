@@ -160,7 +160,6 @@ class USMarket:
         if prev_history_ends < ending:
             self.download_most_recent_daily(sym, prev_history_ends, ending)
             self.fetch_current_data(sym)
-        self.daily_data_updated = True
 
     def load_daily_from_file(self, sym):
         self.datasets_daily[sym] = load_csv_from_files(sym + '-daily-')
@@ -291,6 +290,7 @@ class USMarket:
                     self.update_daily(sym)
                 except:
                     self.missing_daily.append(sym)
+            self.daily_data_updated = True
 
         elif frequency == 'weekly':
             if len(self.datasets_weekly) != 0:
