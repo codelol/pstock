@@ -96,6 +96,11 @@ def get_monday_of_the_week(dateStr):
     date = date - timedelta(days = wd)
     return '-'.join([str(date.year), strWithZero(date.month), strWithZero(date.day)])
 
+def get_friday_of_the_week(dateStr):
+    date = datetime.strptime(get_monday_of_the_week(dateStr), '%Y-%m-%d')
+    date = date + timedelta(days = 4)
+    return '-'.join([str(date.year), strWithZero(date.month), strWithZero(date.day)])
+
 def construct_yahoo_link(sym, m1, d1, y1, m2, d2, y2, type):
     #on yahoo, month starts at 00, instead of 01
     m1_z = strWithZero(m1 - 1)
@@ -202,26 +207,35 @@ class USMarket:
     def update_weekly(self, sym):
         self.update_daily(sym) #data of current week comes from weekly daily data
         self.load_weekly_from_file(sym)
-        prev_history_ends = self.get_latest_history_date(sym, 'weekly')
-        latest_trading_date = get_latest_trading_date()
-        assert(prev_history_ends <= latest_trading_date)
-        if prev_history_ends < min(self.endDate, latest_trading_date):
-            self.download_most_recent_weekly(sym, prev_history_ends, latest_trading_date)
+        prev_history_ends = get_friday_of_the_week(self.get_latest_history_date(sym, 'weekly'))
+        #request weekly data as late as previous Friday to avoid partial weekly data for the current
+        prev_friday_date = datetime.strptime(get_friday_of_the_week(get_latest_trading_date()), '%Y-%m-%d') - \
+                            timedelta(days = 7)
+        prev_friday_str = '-'.join([str(prev_friday_date.year), strWithZero(prev_friday_date.month), \
+                                        strWithZero(prev_friday_date.day)])
+        assert(prev_history_ends <= prev_friday_str)
+        ending = get_friday_of_the_week(min(self.adjusted_endDate, prev_friday_str))
+        if prev_history_ends < ending:
+            self.download_most_recent_weekly(sym, prev_history_ends, ending)
         self.calculate_most_recent_weekly(sym)
 
 
-    def download_most_recent_weekly(self, sym, prev_history_ends, latest_trading_date):
+    def download_most_recent_weekly(self, sym, prev_history_ends, ending):
         #start is the 'next' Monday
         start = datetime.strptime(get_monday_of_the_week(prev_history_ends), '%Y-%m-%d') + \
                 timedelta(days = 7)
-        #ends on the 2nd most recent Sunday
-        end = datetime.strptime(get_monday_of_the_week(latest_trading_date), '%Y-%m-%d') - \
-                timedelta(days = 8)
-        endingMonday = get_monday_of_the_week('-'.join([str(end.year), strWithZero(end.month), strWithZero(end.day)]))
+        #assert that ending is already the correct Friday
+        assert(ending == get_friday_of_the_week(ending))
+        end = datetime.strptime(ending, '%Y-%m-%d')
         link = construct_yahoo_link(sym, start.month, start.day, start.year, end.month, end.day, end.year, 'weekly')
+        endingMonday = get_monday_of_the_week(ending)
         localfpath = os.path.join(foldername, sym+'-weekly-'+endingMonday+'.csv')
         try:
             urllib.request.urlretrieve(link, localfpath)
+            with open(localfpath) as csvfile:
+                reader = csv.DictReader(csvfile)
+                for datapoint in reader:
+                    self.datasets_weekly[sym][datapoint['Date']] = datapoint
         except:
             pass
 
