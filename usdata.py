@@ -171,13 +171,22 @@ class USMarket:
         start = datetime.strptime(prev_history_ends, '%Y-%m-%d') + timedelta(days = 1)
         end = datetime.strptime(latest_trading_date, '%Y-%m-%d')
         link = construct_yahoo_link(sym, start.month, start.day, start.year, end.month, end.day, end.year, 'daily')
-        localfpath = os.path.join(foldername, sym+'-daily-'+latest_trading_date+'.csv')
+        fname = sym+'-daily-'+latest_trading_date+'.csv'
+        localfpath = os.path.join(foldername, fname)
         try:
             urllib.request.urlretrieve(link, localfpath)
+            maxdate = '0000-00-00'
             with open(localfpath) as csvfile:
                 reader = csv.DictReader(csvfile)
                 for datapoint in reader:
-                    self.datasets_daily[sym][datapoint['Date']] = datapoint
+                    dateStr = datapoint['Date']
+                    if dateStr > maxdate:
+                        maxdate = dateStr
+                    self.datasets_daily[sym][dateStr] = datapoint
+            if maxdate != '0000-00-00' and maxdate != latest_trading_date:
+                new_fname = sym+'-daily-'+maxdate+'.csv'
+                new_localfpath = os.path.join(foldername, new_fname)
+                os.rename(localfpath, new_localfpath)
         except:
             pass
 
@@ -228,13 +237,22 @@ class USMarket:
         end = datetime.strptime(ending, '%Y-%m-%d')
         link = construct_yahoo_link(sym, start.month, start.day, start.year, end.month, end.day, end.year, 'weekly')
         endingMonday = get_monday_of_the_week(ending)
-        localfpath = os.path.join(foldername, sym+'-weekly-'+endingMonday+'.csv')
+        fname = sym+'-weekly-'+endingMonday+'.csv'
+        localfpath = os.path.join(foldername, fname)
         try:
             urllib.request.urlretrieve(link, localfpath)
+            maxdate = '0000-00-00'
             with open(localfpath) as csvfile:
                 reader = csv.DictReader(csvfile)
                 for datapoint in reader:
-                    self.datasets_weekly[sym][datapoint['Date']] = datapoint
+                    dateStr = datapoint['Date']
+                    if dateStr > maxdate:
+                        maxdate = dateStr
+                    self.datasets_weekly[sym][dateStr] = datapoint
+            if maxdate != '0000-00-00' and maxdate != endingMonday:
+                new_fname = sym+'-weekly-'+maxdate+'.csv'
+                new_localfpath = os.path.join(foldername, new_fname)
+                os.rename(localfpath, new_localfpath)
         except:
             pass
 
