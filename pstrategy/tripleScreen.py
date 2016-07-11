@@ -30,12 +30,19 @@ class TripleScreen:
         macd_h = Metrics().macd(closePrices)
         if macd_h == None: # not enough data
             return False
-        ema = Metrics().ema(closePrices, 10)
-        sma_halfyear = Metrics().sma(closePrices, 26)
+        ema_fast = Metrics().ema(closePrices, 10)
+        sma_slow = Metrics().sma(closePrices, 26)
         # macd and ema rising, and price is higher than half-year average
         try:
-            if macd_h[0] >= macd_h[1] and ema[0] >= ema[1] and closePrices[0] > sma_halfyear[0]:
-                return True
+            if closePrices[0] < sma_slow[0]:
+                return False
+            if macd_h[0] < macd_h[1]:
+                return False
+            #if ema_fast[0] < max(ema_fast[1:5]):
+                #return False
+            if sma_slow[0] < max(sma_slow[1:5]):
+                return False
+            return True
         except:
             pass
         return False
