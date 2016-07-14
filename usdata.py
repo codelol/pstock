@@ -19,7 +19,7 @@ from yahoo_finance import Share
 from googlefinance import getQuotes as gQuotes
 from datetime import datetime, timedelta
 from tqdm import tqdm
-import csv, os, argparse, fnmatch, pytz, urllib
+import csv, os, argparse, fnmatch, pytz, threading, urllib
 
 foldername = 'datafiles-us'
 max_history_year=5 #if no history data exists, download the last 5 years of history
@@ -311,20 +311,39 @@ class USMarket:
 
     def fetchdata(self, frequency = 'daily'):
         touchFolder()
+        concurrency = 10
         if frequency == 'daily':
             if len(self.datasets_daily) != 0:
                 return
             self.missing_daily = []
+            idx = 0
             for sym in tqdm(self.watchlist, desc='daily chart', unit=' Symbol'):
-                self.update_daily(sym)
+                self.queue_work(idx, concurrency, self.update_daily, sym)
+                idx += 1
             self.daily_data_updated = True
 
         elif frequency == 'weekly':
             if len(self.datasets_weekly) != 0:
                 return
             self.missing_weekly = []
+            idx = 0
             for sym in tqdm(self.watchlist, desc='weekly chart', unit=' Symbol'):
-                self.update_weekly(sym)
+                self.queue_work(idx, concurrency, self.update_weekly, sym)
+                idx += 1
+        self.wait_for_threads()
+
+    def queue_work(self, work_idx, concurrency, updater, sym):
+        t = threading.Thread(target=updater, args=(sym, ))
+        t.start()
+        if (work_idx + 1) % concurrency == 0:
+                self.wait_for_threads()
+
+    def wait_for_threads(self):
+        main_thread = threading.currentThread()
+        for t in threading.enumerate():
+            if t is main_thread:
+                continue
+            t.join()
 
     def getData(self, frequency = 'daily'):
         self.fetchdata(frequency)
