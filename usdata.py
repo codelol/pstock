@@ -152,14 +152,18 @@ class USMarket:
     def update_daily(self, sym):
         if self.daily_data_updated:
             return
-        self.load_daily_from_file(sym)
-        prev_history_ends = self.get_latest_history_date(sym)
-        latest_trading_date = get_latest_trading_date()
-        assert(prev_history_ends <= latest_trading_date)
-        ending = min(self.adjusted_endDate, latest_trading_date)
-        if prev_history_ends < ending:
-            self.download_most_recent_daily(sym, prev_history_ends, ending)
-            self.fetch_current_data(sym)
+        try:
+            self.load_daily_from_file(sym)
+            prev_history_ends = self.get_latest_history_date(sym)
+            latest_trading_date = get_latest_trading_date()
+            assert(prev_history_ends <= latest_trading_date)
+            ending = min(self.adjusted_endDate, latest_trading_date)
+            if prev_history_ends < ending:
+                self.download_most_recent_daily(sym, prev_history_ends, ending)
+                self.fetch_current_data(sym)
+        except:
+            if sym not in self.missing_daily:
+                self.missing_daily.append(sym)
 
     def load_daily_from_file(self, sym):
         self.datasets_daily[sym] = load_csv_from_files(sym + '-daily-')
@@ -214,18 +218,26 @@ class USMarket:
 
     def update_weekly(self, sym):
         self.update_daily(sym) #data of current week comes from weekly daily data
-        self.load_weekly_from_file(sym)
-        prev_history_ends = get_friday_of_the_week(self.get_latest_history_date(sym, 'weekly'))
-        #request weekly data as late as previous Friday to avoid partial weekly data for the current
-        prev_friday_date = datetime.strptime(get_friday_of_the_week(get_latest_trading_date()), '%Y-%m-%d') - \
-                            timedelta(days = 7)
-        prev_friday_str = '-'.join([str(prev_friday_date.year), strWithZero(prev_friday_date.month), \
-                                        strWithZero(prev_friday_date.day)])
-        assert(prev_history_ends <= prev_friday_str)
-        ending = get_friday_of_the_week(min(self.adjusted_endDate, prev_friday_str))
-        if prev_history_ends < ending:
-            self.download_most_recent_weekly(sym, prev_history_ends, ending)
-        self.calculate_most_recent_weekly(sym)
+        if sym in self.missing_daily:
+            if sym not in self.missing_weekly:
+                self.missing_weekly.append(sym)
+            return
+        try:
+            self.load_weekly_from_file(sym)
+            prev_history_ends = get_friday_of_the_week(self.get_latest_history_date(sym, 'weekly'))
+            #request weekly data as late as previous Friday to avoid partial weekly data for the current
+            prev_friday_date = datetime.strptime(get_friday_of_the_week(get_latest_trading_date()), '%Y-%m-%d') - \
+                                timedelta(days = 7)
+            prev_friday_str = '-'.join([str(prev_friday_date.year), strWithZero(prev_friday_date.month), \
+                                            strWithZero(prev_friday_date.day)])
+            assert(prev_history_ends <= prev_friday_str)
+            ending = get_friday_of_the_week(min(self.adjusted_endDate, prev_friday_str))
+            if prev_history_ends < ending:
+                self.download_most_recent_weekly(sym, prev_history_ends, ending)
+            self.calculate_most_recent_weekly(sym)
+        except:
+            if sym not in self.missing_weekly:
+                self.missing_weekly.append(sym)
 
 
     def download_most_recent_weekly(self, sym, prev_history_ends, ending):
@@ -304,10 +316,7 @@ class USMarket:
                 return
             self.missing_daily = []
             for sym in tqdm(self.watchlist, desc='daily chart', unit=' Symbol'):
-                try:
-                    self.update_daily(sym)
-                except:
-                    self.missing_daily.append(sym)
+                self.update_daily(sym)
             self.daily_data_updated = True
 
         elif frequency == 'weekly':
@@ -315,10 +324,7 @@ class USMarket:
                 return
             self.missing_weekly = []
             for sym in tqdm(self.watchlist, desc='weekly chart', unit=' Symbol'):
-                try:
-                    self.update_weekly(sym)
-                except:
-                    self.missing_weekly.append(sym)
+                self.update_weekly(sym)
 
     def getData(self, frequency = 'daily'):
         self.fetchdata(frequency)
