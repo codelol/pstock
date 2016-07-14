@@ -28,10 +28,12 @@ class ChartPatterns:
         closePrices = [float(x['Close']) for x in self.datasets[sym]]
         try:
             if PriceSignals().Type1_buy_point_MACD_bullish_divergence(closePrices):
+                self.wpool.lock()
                 if name not in self.all_rule_results.keys():
                     self.all_rule_results[name] = [sym]
                 else:
                     self.all_rule_results[name].append(sym)
+                self.wpool.unlock()
         except:
             if sym not in self.missing_analysis:
                 self.missing_analysis.append(sym)
@@ -42,10 +44,12 @@ class ChartPatterns:
         closePrices = [float(x['Close']) for x in self.datasets[sym]]
         try:
             if PriceSignals().Type2_buy_point_pullback_after_breakthrough(closePrices):
+                self.wpool.lock()
                 if name not in self.all_rule_results.keys():
                     self.all_rule_results[name] = [sym]
                 else:
                     self.all_rule_results[name].append(sym)
+                self.wpool.unlock()
         except:
             if sym not in self.missing_analysis:
                 self.missing_analysis.append(sym)
@@ -80,10 +84,12 @@ class ChartPatterns:
             if shouldSkip:
                 return
 
+            self.wpool.lock()
             if name not in self.all_rule_results.keys():
                 self.all_rule_results[name] = [sym]
             else:
                 self.all_rule_results[name].append(sym)
+            self.wpool.unlock()
         except:
             if sym not in self.missing_analysis:
                 self.missing_analysis.append(sym)
@@ -99,11 +105,14 @@ class ChartPatterns:
         self.all_rule_results = {}
 
         wpool = WorkPool(100)
+        self.wpool = wpool
         for sym in self.symbols:
             wpool.start_work(self.run_rules_for_sym, sym)
         wpool.wait_for_all()
 
-        for name in self.all_rule_results.keys():
+        rulenames = ['一类买点', '二类买点', '插入线，待入线，切入线']
+        rules_with_results = [r for r in rulenames if r in self.all_rule_results.keys()]
+        for name in rules_with_results:
             symbolStr = ' '.join(self.all_rule_results[name])
             print(name + ': '+ symbolStr)
 

@@ -5,6 +5,7 @@ class WorkPool:
     def __init__(self, concurrency):
         self.total_concurrency = concurrency
         self.works = []
+        self.rlock = threading.RLock()
 
     def start_work(self, func, sym):
 
@@ -19,3 +20,9 @@ class WorkPool:
     def wait_for_all(self):
         for w in self.works:
             w.join()
+
+    def lock(self):
+        self.rlock.acquire()
+
+    def unlock(self):
+        self.rlock.release()
