@@ -3,8 +3,6 @@ Package for metrics calculations
 closePrices[0] is the most recent price
 """
 
-from usdata import USMarket
-
 class Metrics:
     # exponential moving average
     def ema(self, datapoints, days) :
@@ -116,24 +114,26 @@ def testRSI():
     print('testRSI passed:' + str(result))
 
 def main():
-    sym = 'AAPL'
-    watchlist = [sym]
-    print(watchlist)
-    marketData = USMarket(watchlist)
-    priceHistory, missing = marketData.getData('daily')
-    closePrices = [float(x['Close']) for x in priceHistory[sym]]
-    volumes = [float(x['Volume']) for x in priceHistory[sym]]
-
-    mts = Metrics()
-    # rsi = mts.rsi(closePrices)
-    # print(str(rsi))
-    # ema13 = mts.ema(closePrices, 13)
-    # print(str(ema13))
-    # fi = mts.forceIndex(closePrices, volumes)
-    # print(str(fi))
-    print(str(closePrices))
-    sma10 = mts.sma(closePrices, 10)
-    print(str(sma10))
+    pass
+    # sym = 'AAPL'
+    # watchlist = [sym]
+    # print(watchlist)
+    # from usdata import USMarket
+    # marketData = USMarket(watchlist)
+    # priceHistory, missing = marketData.getData('daily')
+    # closePrices = [float(x['Close']) for x in priceHistory[sym]]
+    # volumes = [float(x['Volume']) for x in priceHistory[sym]]
+    #
+    # mts = Metrics()
+    # # rsi = mts.rsi(closePrices)
+    # # print(str(rsi))
+    # # ema13 = mts.ema(closePrices, 13)
+    # # print(str(ema13))
+    # # fi = mts.forceIndex(closePrices, volumes)
+    # # print(str(fi))
+    # print(str(closePrices))
+    # sma10 = mts.sma(closePrices, 10)
+    # print(str(sma10))
 
 if __name__ == '__main__' :
     main()
