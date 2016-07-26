@@ -27,11 +27,12 @@ def merge_one_symbol(source_folder, destfolder, sym, frequency):
     assert(len(data) > 0)
 
     maxdate = max(data.keys())
-    fieldnames = list(data[maxdate].keys())
+    # fieldnames = list(data[maxdate].keys())
+    fieldnames = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close']
     fname = prefix + maxdate + '.csv'
     fpath = os.path.join(destfolder, fname)
     with open(fpath, 'w') as csvout:
-        writer = csv.DictWriter(csvout, fieldnames)
+        writer = csv.DictWriter(csvout, fieldnames=fieldnames, extrasaction='raise')
         writer.writeheader()
         keys = sorted(data.keys(), reverse = True)
         for k in keys:
@@ -43,7 +44,6 @@ def merge_one_folder(folder):
     allfiles = os.listdir(folder)
     # daily data first
     dailyfiles = [f for f in allfiles if 'daily' in f]
-    print(str(dailyfiles))
     symlist = []
     for fname in dailyfiles:
         sym = fname.split('-')[0]
@@ -56,6 +56,7 @@ def merge_one_folder(folder):
     touchFolder(tmpfoldername)
     for sym in symlist:
         merge_one_symbol(folder, tmpfoldername, sym, 'daily')
+        merge_one_symbol(folder, tmpfoldername, sym, 'weekly')
 
     shutil.rmtree(folder, ignore_errors=True)
     os.rename(tmpfoldername, folder)
@@ -63,7 +64,6 @@ def merge_one_folder(folder):
 def main():
     args = arg_parser()
     folders = args.folder
-    print(folders)
 
     for folder in folders:
         merge_one_folder(folder)
@@ -72,5 +72,5 @@ def test():
     merge_one_folder('tmp/')
 
 if __name__ == '__main__':
-    # main()
-    test()
+    main()
+    # test()
