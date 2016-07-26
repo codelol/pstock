@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse, os, fnmatch, csv, shutil
+from tqdm import tqdm
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='extract symbols listed in a csv file')
@@ -54,7 +55,7 @@ def merge_one_folder(folder):
         return
     tmpfoldername = folder + '_tmp'
     touchFolder(tmpfoldername)
-    for sym in symlist:
+    for sym in tqdm(symlist, desc='Symbol files', unit=' Symbol'):
         merge_one_symbol(folder, tmpfoldername, sym, 'daily')
         merge_one_symbol(folder, tmpfoldername, sym, 'weekly')
 
