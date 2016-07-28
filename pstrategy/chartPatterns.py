@@ -104,7 +104,7 @@ class ChartPatterns:
     def run(self):
         self.all_rule_results = {}
 
-        wpool = WorkPool(100)
+        wpool = WorkPool(10)
         self.wpool = wpool
         for sym in self.symbols:
             wpool.start_work(self.run_rules_for_sym, sym)
