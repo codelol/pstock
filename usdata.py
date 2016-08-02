@@ -124,7 +124,7 @@ def construct_yahoo_link(sym, m1, d1, y1, m2, d2, y2, type):
     ret = ret + '&ignore=.csv'
     return ret
 
-def load_csv_from_files(prefix):
+def load_csv_from_files(prefix, endingDate = None):
     ret = {}
     for fname in os.listdir(foldername):
         if fnmatch.fnmatch(fname, prefix + '*'):
@@ -133,7 +133,9 @@ def load_csv_from_files(prefix):
             with open(localfpath) as csvfile:
                 reader = csv.DictReader(csvfile)
                 for datapoint in reader:
-                    ret[datapoint['Date']] = datapoint
+                    dt = datapoint['Date']
+                    if endingDate is None or dt <= endingDate:
+                        ret[dt] = datapoint
                 csvfile.close()
     return ret
 
@@ -167,7 +169,7 @@ class USMarket:
                 self.missing_daily.append(sym)
 
     def load_daily_from_file(self, sym):
-        self.datasets_daily[sym] = load_csv_from_files(sym + '-daily-')
+        self.datasets_daily[sym] = load_csv_from_files(sym + '-daily-', self.adjusted_endDate)
 
     # download .csv file for sym from yahoo finance
     # starting on prev_history_ends + 1
@@ -227,14 +229,21 @@ class USMarket:
             self.load_weekly_from_file(sym)
             prev_history_ends = get_friday_of_the_week(self.get_latest_history_date(sym, 'weekly'))
             #request weekly data as late as previous Friday to avoid partial weekly data for the current
-            prev_friday_date = datetime.strptime(get_friday_of_the_week(get_latest_trading_date()), '%Y-%m-%d') - \
+            interested_ending_date = min(self.adjusted_endDate, get_latest_trading_date())
+            prev_friday_date = datetime.strptime(get_friday_of_the_week(interested_ending_date), '%Y-%m-%d') - \
                                 timedelta(days = 7)
             prev_friday_str = '-'.join([str(prev_friday_date.year), strWithZero(prev_friday_date.month), \
                                             strWithZero(prev_friday_date.day)])
-            assert(prev_history_ends <= prev_friday_str)
-            ending = get_friday_of_the_week(min(self.adjusted_endDate, prev_friday_str))
+            ending = prev_friday_str
             if prev_history_ends < ending:
                 self.download_most_recent_weekly(sym, prev_history_ends, ending)
+
+            # remove the most recent week of data in case user points to a day in the middle of the week
+            # calculate_most_recent_weekly will take of the most recent partial week
+            most_recent_monday = get_monday_of_the_week(max(self.datasets_weekly[sym].keys()))
+            assert(most_recent_monday in self.datasets_weekly[sym].keys());
+            del self.datasets_weekly[sym][most_recent_monday]
+
             self.calculate_most_recent_weekly(sym)
         except:
             if sym not in self.missing_weekly:
