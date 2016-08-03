@@ -25,7 +25,8 @@ def merge_one_symbol(source_folder, destfolder, sym, frequency):
                 for datapoint in reader:
                     data[datapoint['Date']] = datapoint
                 csvfile.close()
-    assert(len(data) > 0)
+    if len(data) == 0:
+        return
 
     maxdate = max(data.keys())
     # fieldnames = list(data[maxdate].keys())
