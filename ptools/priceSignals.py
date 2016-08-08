@@ -95,10 +95,6 @@ class PriceSignals:
             区间2的最高价必须高于区间3最低价的5%,否则不成为突破
             如果当前价低于区间2的最高价15%，则是下跌而不是回调
             如果当前价格是三个区间的最低价，则是下跌而不是回调
-        # 前面的计算成本较低，如果进行到这里，则需要进行一项昂贵的运算：区间3出现了一类买点
-            1. 从区间2，3的分界线往远处找，找到第一个macdh是负数的区间
-               如果找不到，则退出返回False
-            2. 在上面区间找到价格最低点， 这个点应该是一类买点才行
         # 如果进行到这里,则可以看成是满足条件
     """
     def Type2_buy_point_pullback_after_breakthrough(self, closePrices):
@@ -144,38 +140,7 @@ class PriceSignals:
         if closePrices[0] < min(closePrices[1:pos[2]]):
             return False
 
-        # Type 1 buy point must appear in section 3
-        start = 0
-        end = 0
-        macdh = self.m.macd(closePrices)
-        for idx in range(pos[1], pos[2]+1):
-            if start == 0:
-                if macdh[idx] < 0 and macdh[idx-1] >= 0:
-                    start = idx
-            else:
-                assert(end == 0)
-                if macdh[idx] < 0 and macdh[idx+1] >= 0:
-                    end = idx
-                    break
-        if start == 0 or end == 0:
-            return False
- 
-        # now, locate the pos with the minimum price between start and end
-        minval = closePrices[start]
-        minpos = start
-        for idx in range(start + 1, end+1):
-            if closePrices[idx] < minval:
-                minval = closePrices[idx]
-                minpos = idx
-        if minval >= 0:
-            return False
-
-        # set the ending historical price to be the day at minpos
-        sub_closePrices = closePrices[minpos:]
-        if self.Type1_buy_point_MACD_bullish_divergence(sub_closePrices):
-            return True
-
-        return False
+        return True
 
 # def test_type2():
 #     watchlist = ['TWTR']
