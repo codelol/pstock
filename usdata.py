@@ -367,32 +367,3 @@ class USMarket:
             return '-'.join([strWithZero(x) for x in [longBefore.year, longBefore.month, longBefore.day]])
 
         return dates[0]
-
-def test_weekly_data():
-    watchlist = ['AAPL']
-    # usm = USMarket(watchlist, '2016-01-04')
-    usm = USMarket(watchlist)
-    daily, missing1 = usm.getData('daily')
-    weekly, missing2 = usm.getData('weekly')
-    print(str(daily))
-    print(str(weekly))
-
-def main() :
-    test_weekly_data()
-    # args = arg_parser()
-    # watchlist = read_watchlist(args.filename)
-    # print(watchlist)
-    #
-    # usm = USMarket(watchlist, args.frequency)
-    # usm.fetchdata()
-
-    # dateSorted = {}
-    # for sym in watchlist:
-    #     dateSorted[sym] = [usm.datasets_daily[sym][date] for date in sorted(usm.datasets_daily[sym].keys(), reverse=True)]
-    #
-    # ta = TA(watchlist, dateSorted, True)
-    # ta.calculations()
-    # ta.print_results()
-
-if __name__ == '__main__' :
-    main()
