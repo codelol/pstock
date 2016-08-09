@@ -36,17 +36,19 @@ class Metrics:
     # Calculate a 26-day EMA of closing prices.
     # Subtract the 26-day EMA from the 12-day EMA, and plot their difference as a solid line. This is the fast MACD line.
     # Calculate a 9-day EMA of the fast line, and plot the result as a dashed line. This is the slow Signal line.
-    def macd(self, datapoints, d1 = 12, d2 = 26, d3 = 9):
+    def macd_all(self, datapoints, d1 = 12, d2 = 26, d3 = 9):
         ema_d1 = self.ema(datapoints, d1)
         ema_d2 = self.ema(datapoints, d2)
         if ema_d1 == None or ema_d2 == None:
             return None
+        #macd line is also called the fast line
+        #signal line is also called the slow line
         macdline = [(x - y) for x, y in zip(ema_d1, ema_d2)]
         signalLine = self.ema(macdline, d3)
         if signalLine == None:
             return None
         histogram = [(x - y) for x, y in zip(macdline, signalLine)]
-        return histogram
+        return {'fast': macdline, 'slow': signalLine, 'histo': histogram}
 
     def forceIndex(self, closePrices, volumes, d = 13):
         assert(len(closePrices) == len(volumes))

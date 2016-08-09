@@ -33,7 +33,7 @@ class PriceSignals:
         #Step 0
         if closePrices[0] > closePrices[1]:
             return False
-        macdh = self.m.macd(closePrices)
+        macdh = self.m.macd_all(closePrices)['histo']
         if macdh[0] > 0 or macdh[0] < macdh[1]:
             return False
 

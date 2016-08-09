@@ -27,9 +27,10 @@ class TripleScreen:
 
     def pulsesystem_should_long(self, sym, data):
         closePrices = [float(x['Close']) for x in data[sym]]
-        macd_h = Metrics().macd(closePrices)
-        if macd_h == None: # not enough data
+        macd_all = Metrics().macd_all(closePrices)
+        if macd_all == None: # not enough data
             return False
+        macd_h = macd_all['histo']
         ema_fast = Metrics().ema(closePrices, 10)
         sma_slow = Metrics().sma(closePrices, 26)
         # macd and ema rising, and price is higher than half-year average
@@ -49,7 +50,7 @@ class TripleScreen:
 
     def macd_buy_point(self, sym, data):
         closePrices = [float(x['Close']) for x in data[sym]]
-        macd_h = Metrics().macd(closePrices)
+        macd_h = Metrics().macd_all(closePrices)['histo']
         ema = Metrics().ema(closePrices, 30)
         # (1) macd-h going up; (2) still negative; (3) price declining but still above ema
         if macd_h[0] >= macd_h[1] and closePrices[0] > max(closePrices[1], ema[0]):
