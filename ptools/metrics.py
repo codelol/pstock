@@ -12,11 +12,16 @@ class Metrics:
         if dsize < days:
             return None
         ratio = float(2 / (days + 1))
-        prev_ema = float(sum(datapoints[dsize - days:dsize]) / days)
+        init_smas = self.sma(datapoints[(dsize - days) : ], days)
+        if init_smas == None or len(init_smas) == 0:
+            return None
+        assert(len(init_smas) == 1)
+        prev_ema = float(init_smas[0])
         emas = [prev_ema]
         for i in reversed(range(dsize - days)):
-            prev_ema = datapoints[i] * ratio + prev_ema * (1 - ratio)
-            emas.insert(0, prev_ema)
+            cur_ema = (float(datapoints[i]) - float(prev_ema)) * ratio + prev_ema
+            emas.insert(0, cur_ema)
+            prev_ema = float(cur_ema)
         return emas
 
     # simple moving average
@@ -27,8 +32,8 @@ class Metrics:
         if dsize < days:
             return None
         smas = []
-        for i in range(dsize - days):
-            tmp = float(sum(datapoints[i:i+days]) / days)
+        for i in range(dsize - (days - 1)):
+            tmp = float(sum(datapoints[i:i+days]) / float(days))
             smas.append(tmp)
         return smas
 

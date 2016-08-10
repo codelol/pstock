@@ -9,18 +9,6 @@ class ChartPatterns:
         self.missing_analysis = []
         self.metrics = {sym : {} for sym in watchlist}
         self.datasets = datasets
-        self.interests_ema = [7, 14, 30]
-        self.cal_exponential_moving_average()
-
-    def cal_exponential_moving_average(self) :
-        for sym in self.symbols :
-            try:
-                datapoints = [float(x['Close']) for x in self.datasets[sym]]
-                for days in self.interests_ema :
-                    self.metrics[sym]['ema'+str(days)] = Metrics().ema(datapoints, days)
-            except:
-                self.symbols.remove(sym)
-                self.missing_data.append(sym)
 
     # Type1_buy_point_MACD_bullish_divergence
     def signal_Type1_buy_point(self, sym):
