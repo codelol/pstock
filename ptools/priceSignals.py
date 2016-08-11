@@ -11,69 +11,58 @@ class PriceSignals:
     def __init__(self):
         self.m = Metrics()
 
-    """
-    #股价创新低,但是绿柱子(在负数区间)明显比上一次明显缩短
-    #而且低位低于上次绿柱子出现的低位
-    #算法
-    0. 当前价格必须低于上一个价格, macdh是绿柱子,而且比上一根短
-    1. 找出从今到之前的三个区间:
-        区间1: 截止至今天的区间,macd-h是负数
-        区间2: 之前的一个区间,macd-h是正数
-        区间3: 再往前一个拒签,macd-h是负数
-        如果找不到这三个区间,那么数据不足,不能继续
-        #如果任何区间的长度少于等于3，那么可以认为是噪音，不考虑
-    2. 计算区间1到区间3的最低收盘价,当前的价格应该是最低,才能继续
-       可以加如下条件进一步过滤结果: 计算三个区间的最高价,今天的价格必须低于最高价20%以上
-    3. 计算区间1和区间3的macd-h最小值,如果区间1的最小值大于区间3的, 那么继续
-    4. 如果到这里,那么bullish divergence应该成立,返回True
-    """
     def Type1_buy_point_MACD_bullish_divergence(self, closePrices):
-        min_sec_len = 3
-        dsize = len(closePrices)
-        #Step 0
-        if closePrices[0] > closePrices[1]:
+        macd_all = self.m.macd_all(closePrices)
+        if macd_all == None:
             return False
-        macdh = self.m.macd_all(closePrices)['histo']
-        if macdh[0] > 0 or macdh[0] < macdh[1]:
+        macd_fast = macd_all['fast']
+        macd_slow = macd_all['slow']
+        macd_histo = macd_all['histo']
+        if max(macd_slow[0], macd_fast[0], macd_histo[0]) > 0:
             return False
-
-        #Step 1
-        pos = []
-        idx = 0
-        #Locate end of section 1
-        while macdh[idx] <= 0 and idx < dsize:
-            idx += 1
-        if idx == dsize or idx <= min_sec_len:
-            return False
-        pos.append(idx)
-        #Locate end of section 2
-        while macdh[idx] >= 0 and idx < dsize:
-            idx += 1
-        if idx == dsize or (idx - pos[len(pos)-1]) <= min_sec_len:
-            return False
-        pos.append(idx)
-        #Locate end of section 3
-        while macdh[idx] <= 0 and idx < dsize:
-            idx += 1
-        if idx == dsize or (idx - pos[len(pos)-1]) <= min_sec_len:
-            return False
-        pos.append(idx)
-        assert(len(pos) == 3)
-
-        # Step 2
-        for i in range(1, pos[2]):
-            if closePrices[0] > closePrices[i]:
-                return False
-        high = max(closePrices[:pos[2]])
-        if closePrices[0] > high * 0.8:
+        if macd_histo[0] < macd_histo[1]:
             return False
 
-        #Step 3
-        low_section_1 = min(macdh[0:pos[1]])
-        low_section_3 = min(macdh[pos[1]:pos[2]])
-        if low_section_1 < low_section_3:
+        pos = 0
+        min_width = 5
+        while pos < len(closePrices) and macd_fast[pos] <= 0:
+            pos += 1
+        macd_crossing_down_pos1 = pos
+
+        if pos == len(closePrices) or macd_crossing_down_pos1 - 0 < min_width:
             return False
 
+        while pos < len(closePrices) and macd_fast[pos] >= 0:
+            pos += 1
+        macd_crossing_up_pos = pos
+        if pos == len(closePrices) or macd_crossing_up_pos - macd_crossing_down_pos1 < min_width:
+            return False
+
+        while pos < len(closePrices) and macd_fast[pos] <= 0:
+            pos += 1
+        macd_crossing_down_pos2 = pos
+        if pos == len(closePrices) or macd_crossing_down_pos2 - macd_crossing_up_pos < min_width:
+            return False
+
+        price_lows = [min(closePrices[0:macd_crossing_down_pos1]),\
+                      min(closePrices[macd_crossing_down_pos1:macd_crossing_up_pos]),\
+                      min(closePrices[macd_crossing_up_pos:macd_crossing_down_pos2])]
+        price_highs = [max(closePrices[0:macd_crossing_down_pos1]),\
+                       max(closePrices[macd_crossing_down_pos1:macd_crossing_up_pos]),\
+                       max(closePrices[macd_crossing_up_pos:macd_crossing_down_pos2])]
+        # price should have lower low, and lower high
+        if not (price_lows[0] < price_lows[2]):
+            return False
+        if not (price_highs[0] < price_highs[1] and price_highs[1] < price_highs[2]):
+            return False
+
+        # macd_fast should not have 'new' low
+        if min(macd_fast[0:macd_crossing_down_pos1]) < \
+           min(macd_fast[macd_crossing_up_pos:macd_crossing_down_pos2]):
+            return False
+
+        numbers = [0, macd_crossing_down_pos1, macd_crossing_up_pos, macd_crossing_down_pos2]
+        prices = [closePrices[x] for x in numbers]
         return True
 
 
