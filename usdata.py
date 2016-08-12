@@ -136,6 +136,11 @@ def load_csv_from_files(prefix, endingDate = None):
                     dt = datapoint['Date']
                     if endingDate is None or dt <= endingDate:
                         ret[dt] = datapoint
+                        ret[dt]['Open'] = float(datapoint['Open'])
+                        ret[dt]['Close'] = float(datapoint['Close'])
+                        ret[dt]['Low'] = float(datapoint['Low'])
+                        ret[dt]['High'] = float(datapoint['High'])
+                        ret[dt]['Volume'] = float(datapoint['Volume'])
                 csvfile.close()
     return ret
 
@@ -190,6 +195,11 @@ class USMarket:
                     if dateStr > maxdate:
                         maxdate = dateStr
                     self.datasets_daily[sym][dateStr] = datapoint
+                    self.datasets_daily[sym][dateStr]['Open'] = float(datapoint['Open'])
+                    self.datasets_daily[sym][dateStr]['Close'] = float(datapoint['Close'])
+                    self.datasets_daily[sym][dateStr]['Low'] = float(datapoint['Low'])
+                    self.datasets_daily[sym][dateStr]['High'] = float(datapoint['High'])
+                    self.datasets_daily[sym][dateStr]['Volume'] = float(datapoint['Volume'])
             if maxdate != '0000-00-00' and maxdate != latest_trading_date:
                 new_fname = sym+'-daily-'+maxdate+'.csv'
                 new_localfpath = os.path.join(foldername, new_fname)
@@ -209,12 +219,12 @@ class USMarket:
             return
         self.datasets_daily[sym][ts] = t = {}
         t['Date']  = '3000-01-01' #debugging purposes, so we know this is current. This won't be saved to file
-        t['High']  = sdata.get_days_high()
-        t['Low']   = sdata.get_days_low()
-        t['Open']  = sdata.get_open()
+        t['High']  = float(sdata.get_days_high())
+        t['Low']   = float(sdata.get_days_low())
+        t['Open']  = float(sdata.get_open())
         # t['Close'] = sdata.get_price()
-        t['Close'] = gquote[0]['LastTradePrice'] # use google data for latest 'Close', which is more accurate
-        t['Volume'] = sdata.get_volume()
+        t['Close'] = float(gquote[0]['LastTradePrice']) # use google data for latest 'Close', which is more accurate
+        t['Volume'] = float(sdata.get_volume())
         for k in t.keys():
             if t[k] == None:
                 raise Exception('missing most recent daily', sym)
@@ -271,6 +281,11 @@ class USMarket:
                     if dateStr > maxdate:
                         maxdate = dateStr
                     self.datasets_weekly[sym][dateStr] = datapoint
+                    self.datasets_weekly[sym][dateStr]['Open'] = float(datapoint['Open'])
+                    self.datasets_weekly[sym][dateStr]['Close'] = float(datapoint['Close'])
+                    self.datasets_weekly[sym][dateStr]['Low'] = float(datapoint['Low'])
+                    self.datasets_weekly[sym][dateStr]['High'] = float(datapoint['High'])
+                    self.datasets_weekly[sym][dateStr]['Volume'] = float(datapoint['Volume'])
             if maxdate != '0000-00-00' and maxdate != endingMonday:
                 new_fname = sym+'-weekly-'+maxdate+'.csv'
                 new_localfpath = os.path.join(foldername, new_fname)

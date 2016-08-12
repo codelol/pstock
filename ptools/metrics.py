@@ -94,12 +94,10 @@ class Metrics:
             RSI.append(100 - 100 / (1 + rs))
         return RSI
 
-    def support_and_resistance(self, openPricesI, closePricesI, window = 10):
+    def support_and_resistance(self, openPrices, closePrices, window = 10):
         ret = []
         pos = []
-        assert(len(openPricesI) == len(closePricesI))
-        openPrices = [float(x) for x in openPricesI]
-        closePrices = [float(x) for x in closePricesI]
+        assert(len(openPrices) == len(closePrices))
         datalen = len(openPrices)
         if datalen < window:
             return ret
