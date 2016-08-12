@@ -42,42 +42,19 @@ class ChartPatterns:
             if sym not in self.missing_analysis:
                 self.missing_analysis.append(sym)
 
-    def large_negative_followed_by_small_positive(self, sym):
-        name = '插入线，待入线，切入线'
+    def singal_bottom_up(self, sym):
+        #插入线，待入线，切入线, 包线
+        name = '反弹'
         try:
-            openPrices = [float(x['Open']) for x in self.datasets[sym]]
-            closePrices = [float(x['Close']) for x in self.datasets[sym]]
-            #if current session is negative, pass
-            if closePrices[0] < openPrices[0]:
-                return
-            #if previous session is positive, pass
-            if closePrices[1] > openPrices[1]:
-                return
-            #if previous session didn't drop at least 1%, pass
-            if (openPrices[1] - closePrices[1]) < openPrices[1] * 0.01:
-                return
-            #if current session opened higher than last session's range, pass
-            if openPrices[0] >= min(openPrices[1], closePrices[1]):
-                return
-
-            #if any recent close price is than ema_5 or ema_10, pass
-            #a low price is necessary for profitable reversal
-            ema_5  = Metrics().ema(closePrices, 5)
-            ema_10 = Metrics().ema(closePrices, 10)
-            shouldSkip = False
-            for idx in range(1, 3):
-                if closePrices[idx] > min(ema_5[idx], ema_10[idx]):
-                    shouldSkip = True
-                    break
-            if shouldSkip:
-                return
-
-            self.wpool.lock()
-            if name not in self.all_rule_results.keys():
-                self.all_rule_results[name] = [sym]
-            else:
-                self.all_rule_results[name].append(sym)
-            self.wpool.unlock()
+            openPrices = [x['Open'] for x in self.datasets[sym]]
+            closePrices = [x['Close'] for x in self.datasets[sym]]
+            if PriceSignals().Bottom_Up(openPrices, closePrices):
+                self.wpool.lock()
+                if name not in self.all_rule_results.keys():
+                    self.all_rule_results[name] = [sym]
+                else:
+                    self.all_rule_results[name].append(sym)
+                self.wpool.unlock()
         except:
             if sym not in self.missing_analysis:
                 self.missing_analysis.append(sym)
@@ -85,7 +62,7 @@ class ChartPatterns:
     def run_rules_for_sym(self, sym):
         rules = [self.signal_Type1_buy_point,
                  self.signal_Type2_buy_point,
-                 self.large_negative_followed_by_small_positive]
+                 self.singal_bottom_up]
         for rule in rules:
             rule(sym)
 
@@ -98,7 +75,7 @@ class ChartPatterns:
             wpool.start_work(self.run_rules_for_sym, sym)
         wpool.wait_for_all()
 
-        rulenames = ['一类买点', '二类买点', '插入线，待入线，切入线']
+        rulenames = ['一类买点', '二类买点', '反弹']
         rules_with_results = [r for r in rulenames if r in self.all_rule_results.keys()]
         for name in rules_with_results:
             symbolStr = ' '.join(self.all_rule_results[name])

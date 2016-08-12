@@ -117,6 +117,4 @@ class Metrics:
             elif medianmin == dmin:
                 ret.append(medianmin)
                 pos.append(idx)
-
-        print(str(pos))
         return ret
