@@ -93,3 +93,32 @@ class Metrics:
             RSarray.append(rs)
             RSI.append(100 - 100 / (1 + rs))
         return RSI
+
+    def support_and_resistance(self, openPricesI, closePricesI, window = 10):
+        ret = []
+        pos = []
+        assert(len(openPricesI) == len(closePricesI))
+        openPrices = [float(x) for x in openPricesI]
+        closePrices = [float(x) for x in closePricesI]
+        datalen = len(openPrices)
+        if datalen < window:
+            return ret
+        for i in range(datalen - window):
+            openMax = max(openPrices[i:i+window])
+            openMin = min(openPrices[i:i+window])
+            closeMax = max(closePrices[i:i+window])
+            closeMin = min(closePrices[i:i+window])
+            dmax = max(openMax, openMin, closeMax, closeMin)
+            dmin = min(openMax, openMin, closeMax, closeMin)
+            idx = i + int(window / 2)
+            medianmax = max(openPrices[idx], closePrices[idx])
+            medianmin = min(openPrices[idx], closePrices[idx])
+            if medianmax == dmax:
+                ret.append(medianmax)
+                pos.append(idx)
+            elif medianmin == dmin:
+                ret.append(medianmin)
+                pos.append(idx)
+
+        print(str(pos))
+        return ret

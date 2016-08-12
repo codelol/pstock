@@ -130,31 +130,3 @@ class PriceSignals:
             return False
 
         return True
-
-# def test_type2():
-#     watchlist = ['TWTR']
-#     marketData = USMarket(watchlist, '2016-06-10')
-#     s = PriceSignals()
-#     priceHistory, missing = marketData.getData('daily')
-#     ret = False
-#     for sym in [x for x in watchlist if x not in missing]:
-#         closePrices = [float(x['Close']) for x in priceHistory[sym]]
-#         ret = s.Type2_buy_point_pullback_after_breakthrough(closePrices)
-#     assert(ret)
-#
-# def main():
-#     watchlist = ['TWTR']
-#     marketData = USMarket(watchlist, '2016-06-10')
-#     s = PriceSignals()
-#     priceHistory, missing = marketData.getData('daily')
-#     print('missing: '+str(missing))
-#     for sym in [x for x in watchlist if x not in missing]:
-#         closePrices = [float(x['Close']) for x in priceHistory[sym]]
-#         ret = s.Type1_buy_point_MACD_bullish_divergence(closePrices)
-#         print(sym+ ': '+str(ret))
-#         ret = s.Type2_buy_point_pullback_after_breakthrough(closePrices)
-#         print(sym+ ': '+str(ret))
-#
-# if __name__ == '__main__' :
-#     # test_type2()
-#     # main()

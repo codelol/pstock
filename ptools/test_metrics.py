@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 from ptools.metrics import Metrics
+from usdata import USMarket
 
 class TestMetrics(TestCase):
     def test_ema(self):
@@ -27,3 +28,12 @@ class TestMetrics(TestCase):
         assert(result[0] > 66.480 and result[0] < 66.490)
         assert(result[1] > 66.240 and result[1] < 66.250)
         assert(result[2] > 70.460 and result[2] < 70.470)
+
+    def test_support_and_resistance(self):
+        sym = 'UCO'
+        data, missing = USMarket([sym], '2016-08-11').getData()
+        sdata = data[sym][:50]
+        openPrices = [e['Open'] for e in sdata]
+        closePrices = [e['Close'] for e in sdata]
+        sr = Metrics().support_and_resistance(openPrices, closePrices)
+        print(str(sr))
