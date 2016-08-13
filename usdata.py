@@ -316,18 +316,18 @@ class USMarket:
                     found = found + 1
                     data = self.datasets_weekly[sym][monday_str]
                     if data['Open'] == None:
-                        data['Open'] =self.datasets_daily[sym][kstr]['Open']
+                        data['Open'] = self.datasets_daily[sym][kstr]['Open']
                     data['Close'] = self.datasets_daily[sym][kstr]['Close']
 
                     high_float = float(self.datasets_daily[sym][kstr]['High'])
                     if data['High'] == None or high_float > float(data['High']):
-                        data['High'] = str(high_float)
+                        data['High'] = high_float
 
                     low_float = float(self.datasets_daily[sym][kstr]['Low'])
                     if data['Low'] == None or low_float < float(data['Low']):
-                        data['Low'] = str(low_float)
+                        data['Low'] = low_float
 
-                    data['Volume'] = str(float(data['Volume']) + float(self.datasets_daily[sym][kstr]['Volume']))
+                    data['Volume'] = float(data['Volume']) + float(self.datasets_daily[sym][kstr]['Volume'])
             if found > 0:
                 # volume in weekly chart is 'avg'
                 self.datasets_weekly[sym][monday_str]['Volume'] = \
