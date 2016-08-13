@@ -48,7 +48,9 @@ class ChartPatterns:
         try:
             openPrices = [x['Open'] for x in self.datasets[sym]]
             closePrices = [x['Close'] for x in self.datasets[sym]]
-            if PriceSignals().Bottom_Up(openPrices, closePrices):
+            lowPrices = [x['Low'] for x in self.datasets[sym]]
+            highPrices = [x['High'] for x in self.datasets[sym]]
+            if PriceSignals().Bottom_Up(openPrices, closePrices, lowPrices, highPrices):
                 self.wpool.lock()
                 if name not in self.all_rule_results.keys():
                     self.all_rule_results[name] = [sym]

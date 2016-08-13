@@ -131,29 +131,26 @@ class PriceSignals:
 
         return True
 
-    def Bottom_Up(self, openPrices, closePrices):
-        #last bar must be a nagative bar
+    #Note that the 'Open' data of the current day is not reliable, so let's not depend on it
+    def Bottom_Up(self, openPrices, closePrices, lows, highs):
+        #previous bar must be a nagative bar
         if not (closePrices[1] < openPrices[1]):
             return False
-        #current bar must be a positive bar
-        if not (closePrices[0] > openPrices[0]):
-            return False
-        #current bar must open lower, and close higher
-        if not (openPrices[0] < closePrices[1] and closePrices[0] > closePrices[1]):
+        #current price must be higher than previous close
+        if not (closePrices[0] > closePrices[1]):
             return False
 
         #if any recent close price is higher than ema_5 or ema_10, pass
         #a low price is necessary for profitable reversal
         ema_5  = Metrics().ema(closePrices, 5)
         ema_10 = Metrics().ema(closePrices, 10)
-        shouldSkip = False
         for idx in range(1, 3):
             if closePrices[idx] > min(ema_5[idx], ema_10[idx]):
                 return False
 
         # look back 300 bars for support and resistence, very old bars are not reliable
         sr = self.m.support_and_resistance(openPrices[:300], closePrices[:300])
-        myrange = {'min': min(openPrices[0], closePrices[1]), 'max':max(closePrices[0], openPrices[1])}
+        myrange = {'min': lows[1], 'max':max(closePrices[0], highs[1])}
         for p in sr:
             if p > myrange['max']:
                 continue
