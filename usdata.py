@@ -132,8 +132,12 @@ def load_csv_from_files(prefix, endingDate = None):
             localfpath = os.path.join(foldername, fname)
             with open(localfpath) as csvfile:
                 reader = csv.DictReader(csvfile)
+                prev_dt = '9999-99-99'
+                count = 0
                 for datapoint in reader:
                     dt = datapoint['Date']
+                    assert(dt < prev_dt)
+                    prev_dt = dt
                     if endingDate is None or dt <= endingDate:
                         ret[dt] = datapoint
                         ret[dt]['Open'] = float(datapoint['Open'])
@@ -141,6 +145,9 @@ def load_csv_from_files(prefix, endingDate = None):
                         ret[dt]['Low'] = float(datapoint['Low'])
                         ret[dt]['High'] = float(datapoint['High'])
                         ret[dt]['Volume'] = float(datapoint['Volume'])
+                        count += 1
+                        if count == 300:
+                            break
                 csvfile.close()
     return ret
 
