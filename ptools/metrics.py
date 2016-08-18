@@ -95,8 +95,7 @@ class Metrics:
         return RSI
 
     def support_and_resistance(self, openPrices, closePrices, window = 10):
-        ret = []
-        pos = []
+        ret = {'idx':[], 'price':[]}
         assert(len(openPrices) == len(closePrices))
         datalen = len(openPrices)
         if datalen < window:
@@ -112,9 +111,9 @@ class Metrics:
             medianmax = max(openPrices[idx], closePrices[idx])
             medianmin = min(openPrices[idx], closePrices[idx])
             if medianmax == dmax:
-                ret.append(medianmax)
-                pos.append(idx)
+                ret['idx'].append(idx)
+                ret['price'].append(medianmax)
             elif medianmin == dmin:
-                ret.append(medianmin)
-                pos.append(idx)
+                ret['idx'].append(idx)
+                ret['price'].append(medianmin)
         return ret
