@@ -5,7 +5,6 @@ closePrices[0] is the most recent price
 """
 
 from ptools import Metrics
-# from usdata import USMarket
 
 class PriceSignals:
     def __init__(self):
@@ -151,7 +150,7 @@ class PriceSignals:
         # look back 300 bars for support and resistence, very old bars are not reliable
         sr = self.m.support_and_resistance(openPrices[:300], closePrices[:300])
         myrange = {'min': lows[1], 'max':max(closePrices[0], highs[1])}
-        for i in range(len(sr)):
+        for i in range(len(sr['price'])):
             price = sr['price'][i]
             if price > myrange['max']:
                 continue
