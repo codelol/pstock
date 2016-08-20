@@ -181,3 +181,5 @@ class PriceSignals:
 
         if int(closePrices[0] / price_threshold) == int(prev_high / price_threshold):
             return False
+
+        return True
