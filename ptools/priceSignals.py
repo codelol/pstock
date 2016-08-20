@@ -164,10 +164,10 @@ class PriceSignals:
 
         return False
 
-    def New_High(self, closePrices):
+    def New_High(self, closePrices, highs):
         if len(closePrices) < 20:
             return False
-        prev_high = max(closePrices[1:])
+        prev_high = max(highs[1:])
         cur_price = closePrices[0]
         if cur_price < prev_high:
             return False
