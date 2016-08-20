@@ -61,10 +61,26 @@ class ChartPatterns:
             if sym not in self.missing_analysis:
                 self.missing_analysis.append(sym)
 
+    def signal_new_high(self, sym):
+        name = '整数新高'
+        try:
+            closePrices = [x['Close'] for x in self.datasets[sym]]
+            if PriceSignals().New_High(closePrices):
+                self.wpool.lock()
+                if name not in self.all_rule_results.keys():
+                    self.all_rule_results[name] = [sym]
+                else:
+                    self.all_rule_results[name].append(sym)
+                self.wpool.unlock()
+        except:
+            if sym not in self.missing_analysis:
+                self.missing_analysis.append(sym)
+
     def run_rules_for_sym(self, sym):
         rules = [self.signal_Type1_buy_point,
                  self.signal_Type2_buy_point,
-                 self.singal_bottom_up]
+                 self.singal_bottom_up,
+                 self.signal_new_high]
         for rule in rules:
             rule(sym)
 
@@ -77,7 +93,7 @@ class ChartPatterns:
             wpool.start_work(self.run_rules_for_sym, sym)
         wpool.wait_for_all()
 
-        rulenames = ['一类买点', '二类买点', '反弹']
+        rulenames = ['一类买点', '二类买点', '反弹', '整数新高']
         rules_with_results = [r for r in rulenames if r in self.all_rule_results.keys()]
         for name in rules_with_results:
             symbolStr = ' '.join(self.all_rule_results[name])

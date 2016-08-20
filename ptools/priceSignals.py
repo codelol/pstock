@@ -163,3 +163,21 @@ class PriceSignals:
             return True
 
         return False
+
+    def New_High(self, closePrices):
+        if len(closePrices) < 20:
+            return False
+        prev_high = max(closePrices[1:])
+        cur_price = closePrices[0]
+        if cur_price < prev_high:
+            return False
+
+        if cur_price < 50:
+            price_threshold = 10
+        elif cur_price < 100:
+            price_threshold = 50
+        else:
+            price_threshold = 100
+
+        if int(closePrices[0] / price_threshold) == int(prev_high / price_threshold):
+            return False
