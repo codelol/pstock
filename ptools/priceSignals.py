@@ -172,10 +172,9 @@ class PriceSignals:
         if cur_price < prev_high:
             return False
 
-        if cur_price < 50:
+        cur_price *= 1.02 #if cur_price is 2% short, print it too, so I can watch it
+        if cur_price < 100:
             price_threshold = 10
-        elif cur_price < 100:
-            price_threshold = 50
         else:
             price_threshold = 100
 
