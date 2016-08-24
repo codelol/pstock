@@ -28,11 +28,14 @@ def merge_one_symbol(source_folder, destfolder, sym, frequency):
     if len(data) == 0:
         return
 
+    destSubFolder = os.path.join(destfolder, sym[:1])
+    touchFolder(destSubFolder)
+
     maxdate = max(data.keys())
     # fieldnames = list(data[maxdate].keys())
     fieldnames = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close']
     fname = prefix + maxdate + '.csv'
-    fpath = os.path.join(destfolder, fname)
+    fpath = os.path.join(destSubFolder, fname)
     with open(fpath, 'w') as csvout:
         writer = csv.DictWriter(csvout, fieldnames=fieldnames, extrasaction='raise')
         writer.writeheader()
