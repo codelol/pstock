@@ -17,9 +17,10 @@ def touchFolder(foldername):
 def merge_one_symbol(source_folder, destfolder, sym, frequency):
     data = {}
     prefix = sym + '-' + frequency + '-'
-    for fname in os.listdir(source_folder):
+    source_sub_folder = os.path.join(source_folder, sym[:1])
+    for fname in os.listdir(source_sub_folder):
         if fnmatch.fnmatch(fname, prefix + '*'):
-            localfpath = os.path.join(source_folder, fname)
+            localfpath = os.path.join(source_sub_folder, fname)
             with open(localfpath) as csvfile:
                 reader = csv.DictReader(csvfile)
                 for datapoint in reader:
@@ -46,14 +47,15 @@ def merge_one_symbol(source_folder, destfolder, sym, frequency):
 
 def merge_one_folder(folder):
     folder = folder.rstrip(os.path.sep)
-    allfiles = os.listdir(folder)
-    # daily data first
-    dailyfiles = [f for f in allfiles if 'daily' in f]
     symlist = []
-    for fname in dailyfiles:
-        sym = fname.split('-')[0]
-        if sym not in symlist:
-            symlist.append(sym)
+    for subfolder in os.listdir(folder):
+        path = os.path.join(folder, subfolder)
+        files = os.listdir(path)
+        dailyfiles = [f for f in files if 'daily' in f]
+        for fname in dailyfiles:
+            sym = fname.split('-')[0]
+            if sym not in symlist:
+                symlist.append(sym)
     print(str(symlist))
     if len(symlist) == 0:
         return
