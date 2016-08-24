@@ -49,9 +49,9 @@ def read_watchlist(files) :
             ret.append(line.strip())
     return ret
 
-def touchFolder():
-    if not os.path.exists(foldername):
-        os.makedirs(foldername)
+def touchFolder(path = foldername):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 def strWithZero(num):
             s = str(num)
@@ -126,10 +126,12 @@ def construct_yahoo_link(sym, m1, d1, y1, m2, d2, y2, type):
 
 def load_csv_from_files(prefix, endingDate = None):
     ret = {}
-    for fname in os.listdir(foldername):
+    subFolderName = os.path.join(foldername, prefix[:1])
+    touchFolder(subFolderName)
+    for fname in os.listdir(subFolderName):
         if fnmatch.fnmatch(fname, prefix + '*'):
             foundFile = True
-            localfpath = os.path.join(foldername, fname)
+            localfpath = os.path.join(subFolderName, fname)
             with open(localfpath) as csvfile:
                 reader = csv.DictReader(csvfile)
                 prev_dt = '9999-99-99'
@@ -191,7 +193,9 @@ class USMarket:
         end = datetime.strptime(latest_trading_date, '%Y-%m-%d')
         link = construct_yahoo_link(sym, start.month, start.day, start.year, end.month, end.day, end.year, 'daily')
         fname = sym+'-daily-'+latest_trading_date+'.csv'
-        localfpath = os.path.join(foldername, fname)
+        subFolderName = os.path.join(foldername, sym[:1])
+        touchFolder(subFolderName)
+        localfpath = os.path.join(subFolderName, fname)
         try:
             urllib.request.urlretrieve(link, localfpath)
             maxdate = '0000-00-00'
@@ -209,7 +213,7 @@ class USMarket:
                     self.datasets_daily[sym][dateStr]['Volume'] = float(datapoint['Volume'])
             if maxdate != '0000-00-00' and maxdate != latest_trading_date:
                 new_fname = sym+'-daily-'+maxdate+'.csv'
-                new_localfpath = os.path.join(foldername, new_fname)
+                new_localfpath = os.path.join(subFolderName, new_fname)
                 os.rename(localfpath, new_localfpath)
         except:
             pass
@@ -277,7 +281,9 @@ class USMarket:
         link = construct_yahoo_link(sym, start.month, start.day, start.year, end.month, end.day, end.year, 'weekly')
         endingMonday = get_monday_of_the_week(ending)
         fname = sym+'-weekly-'+endingMonday+'.csv'
-        localfpath = os.path.join(foldername, fname)
+        subFolderName = os.path.join(foldername, sym[:1])
+        touchFolder(subFolderName)
+        localfpath = os.path.join(subFolderName, fname)
         try:
             urllib.request.urlretrieve(link, localfpath)
             maxdate = '0000-00-00'
@@ -295,7 +301,7 @@ class USMarket:
                     self.datasets_weekly[sym][dateStr]['Volume'] = float(datapoint['Volume'])
             if maxdate != '0000-00-00' and maxdate != endingMonday:
                 new_fname = sym+'-weekly-'+maxdate+'.csv'
-                new_localfpath = os.path.join(foldername, new_fname)
+                new_localfpath = os.path.join(subFolderName, new_fname)
                 os.rename(localfpath, new_localfpath)
         except:
             pass
