@@ -148,7 +148,7 @@ def load_csv_from_files(prefix, endingDate = None):
                         ret[dt]['High'] = float(datapoint['High'])
                         ret[dt]['Volume'] = float(datapoint['Volume'])
                         count += 1
-                        if count == 300:
+                        if count == 400:
                             break
                 csvfile.close()
     return ret

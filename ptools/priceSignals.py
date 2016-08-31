@@ -14,6 +14,7 @@ class PriceSignals:
         macd_all = self.m.macd_all(closePrices)
         if macd_all == None:
             return False
+
         macd_fast = macd_all['fast']
         macd_slow = macd_all['slow']
         macd_histo = macd_all['histo']
@@ -22,46 +23,34 @@ class PriceSignals:
         if macd_histo[0] < macd_histo[1]:
             return False
 
+        # MACD底部背离已经出现:
+        # 底部背离：依次出现金叉，死叉，金叉。虽然这些叉出现时的价格越来越低，但是对应的macd_fast值越来越高
+        # 按照第一类买点的定律，出现第二个金叉时，已经错过了最低买点，所以要求是:
+        # 最近一次出现了金叉，死叉，当前
         pos = 0
-        min_width = 5
-        while pos < len(closePrices) and macd_fast[pos] <= 0:
+        while pos < len(closePrices) and macd_histo[pos]<0:
             pos += 1
-        macd_crossing_down_pos1 = pos
-
-        if pos == len(closePrices) or macd_crossing_down_pos1 - 0 < min_width:
+        if pos == len(closePrices):
             return False
+        dead_cross = pos
 
-        while pos < len(closePrices) and macd_fast[pos] >= 0:
+        pos += 1
+        while pos < len(closePrices) and macd_histo[pos]>0:
             pos += 1
-        macd_crossing_up_pos = pos
-        if pos == len(closePrices) or macd_crossing_up_pos - macd_crossing_down_pos1 < min_width:
+        if pos == len(closePrices):
+            return False
+        gold_cross = pos
+
+        """
+        print(str([0, dead_cross, gold_cross]))
+        print(str([closePrices[0], closePrices[dead_cross], closePrices[gold_cross]]))
+        print(str([macd_fast[0], macd_fast[dead_cross], macd_fast[gold_cross]]))
+        """
+        #价格更低，但是macd没有更低，这就是一种背离
+        if not (closePrices[0] < closePrices[gold_cross] and\
+                macd_fast[0] > macd_fast[gold_cross]):
             return False
 
-        while pos < len(closePrices) and macd_fast[pos] <= 0:
-            pos += 1
-        macd_crossing_down_pos2 = pos
-        if pos == len(closePrices) or macd_crossing_down_pos2 - macd_crossing_up_pos < min_width:
-            return False
-
-        price_lows = [min(closePrices[0:macd_crossing_down_pos1]),\
-                      min(closePrices[macd_crossing_down_pos1:macd_crossing_up_pos]),\
-                      min(closePrices[macd_crossing_up_pos:macd_crossing_down_pos2])]
-        price_highs = [max(closePrices[0:macd_crossing_down_pos1]),\
-                       max(closePrices[macd_crossing_down_pos1:macd_crossing_up_pos]),\
-                       max(closePrices[macd_crossing_up_pos:macd_crossing_down_pos2])]
-        # price should have lower low, and lower high
-        if not (price_lows[0] < price_lows[2]):
-            return False
-        if not (price_highs[0] < price_highs[1] and price_highs[1] < price_highs[2]):
-            return False
-
-        # macd_fast should not have 'new' low
-        if min(macd_fast[0:macd_crossing_down_pos1]) < \
-           min(macd_fast[macd_crossing_up_pos:macd_crossing_down_pos2]):
-            return False
-
-        numbers = [0, macd_crossing_down_pos1, macd_crossing_up_pos, macd_crossing_down_pos2]
-        prices = [closePrices[x] for x in numbers]
         return True
 
 
