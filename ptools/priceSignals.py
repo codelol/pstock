@@ -139,6 +139,8 @@ class PriceSignals:
         # look back 300 bars for support and resistence, very old bars are not reliable
         sr = self.m.support_and_resistance(openPrices[:300], closePrices[:300])
         myrange = {'min': lows[1], 'max':max(closePrices[0], highs[1])}
+        foundSupport = False
+        supportIdx = -1
         for i in range(len(sr['price'])):
             price = sr['price'][i]
             if price > myrange['max']:
@@ -149,9 +151,20 @@ class PriceSignals:
             # 如果之前跌破了找到的这个支撑点，那么这个支撑点已经作废了
             if min(closePrices[2:idx]) < price:
                 return False
-            return True
+            foundSupport = True
+            supportIdx = idx
+            break
 
-        return False
+        if not foundSupport:
+            return False
+
+        prevMax = max(closePrices[1:supportIdx])
+        #print(str([supportIdx, prevMax, closePrices[0]]))
+
+        if closePrices[0] > prevMax * 0.9:
+            return False
+
+        return True
 
     def New_High(self, closePrices, highs):
         if len(closePrices) < 20:
