@@ -171,14 +171,17 @@ class PriceSignals:
             return False
         prev_high = max(highs[1:])
         cur_price = closePrices[0]
+        #print(str([cur_price, prev_high]))
         if cur_price < prev_high:
             return False
 
         ema_5 = self.m.ema(closePrices, 5)
         ema_10 = self.m.ema(closePrices, 10)
 
-        # is ema5 is a lot higher than ema10, skip this one
-        if ema_5[0] > ema_10[0] * 1.02:
+        # if price increased fast, skip
+        limit = 1.02
+        if (cur_price > min(ema_5[0], closePrices[1]) * limit) or\
+           (ema_5[0] > ema_10[0] * limit):
             return False
 
         return True
