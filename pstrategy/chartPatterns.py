@@ -62,7 +62,7 @@ class ChartPatterns:
                 self.missing_analysis.append(sym)
 
     def signal_new_high(self, sym):
-        name = '整数新高'
+        name = '新高'
         try:
             closePrices = [x['Close'] for x in self.datasets[sym]]
             highs = [x['High'] for x in self.datasets[sym]]
@@ -94,7 +94,8 @@ class ChartPatterns:
             wpool.start_work(self.run_rules_for_sym, sym)
         wpool.wait_for_all()
 
-        rulenames = ['一类买点', '二类买点', '反弹', '整数新高']
+        # rulenames = ['一类买点', '二类买点', '反弹', '新高']
+        rulenames = ['一类买点', '反弹', '新高']
         rules_with_results = [r for r in rulenames if r in self.all_rule_results.keys()]
         for name in rules_with_results:
             symbolStr = ' '.join(self.all_rule_results[name])

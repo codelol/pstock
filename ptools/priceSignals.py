@@ -174,6 +174,24 @@ class PriceSignals:
         if cur_price < prev_high:
             return False
 
+        ema_5 = self.m.ema(closePrices, 5)
+        ema_10 = self.m.ema(closePrices, 10)
+
+        # is ema5 is a lot higher than ema10, skip this one
+        if ema_5[0] > ema_10[0] * 1.02:
+            return False
+
+        return True
+
+    #这个版本是: "整数新高"
+    def New_High_Old(self, closePrices, highs):
+        if len(closePrices) < 20:
+            return False
+        prev_high = max(highs[1:])
+        cur_price = closePrices[0]
+        if cur_price < prev_high:
+            return False
+
         cur_price *= 1.02 #if cur_price is 2% short, print it too, so I can watch it
         if cur_price < 10:
             price_threshold = 1
