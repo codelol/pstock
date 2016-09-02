@@ -5,6 +5,7 @@ closePrices[0] is the most recent price
 """
 
 from ptools import Metrics
+import numpy
 
 class PriceSignals:
     def __init__(self):
@@ -182,6 +183,11 @@ class PriceSignals:
         limit = 1.02
         if (cur_price > min(ema_5[0], closePrices[1]) * limit) or\
            (ema_5[0] > ema_10[0] * limit):
+            return False
+
+        # skip if new high has been achived very recently
+        idx = numpy.argmax(closePrices[1:5]) + 1
+        if self.New_High(closePrices[idx:], highs[idx:]):
             return False
 
         return True
