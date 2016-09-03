@@ -190,6 +190,10 @@ class PriceSignals:
         if self.New_High(closePrices[idx:], highs[idx:]):
             return False
 
+        rsi = self.m.rsi(closePrices)
+        if max(rsi[:5]) > 70:
+            return False
+
         return True
 
     #这个版本是: "整数新高"
