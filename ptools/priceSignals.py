@@ -5,7 +5,6 @@ closePrices[0] is the most recent price
 """
 
 from ptools import Metrics
-import numpy
 
 class PriceSignals:
     def __init__(self):
@@ -167,7 +166,9 @@ class PriceSignals:
 
         return True
 
-    def New_High(self, closePrices, highs):
+    def New_High(self, data):
+        closePrices = [x['Close'] for x in data]
+        highs = [x['High'] for x in data]
         if len(closePrices) < 20:
             return False
         prev_high = max(highs[1:])
@@ -185,9 +186,17 @@ class PriceSignals:
            (ema_5[0] > ema_10[0] * limit):
             return False
 
-        # skip if new high has been achived very recently
-        idx = numpy.argmax(closePrices[1:5]) + 1
-        if self.New_High(closePrices[idx:], highs[idx:]):
+        #用支撑线阻力线的位置来判断,价格是否在某区间徘徊
+        #如果价格一路上升,是不会有支撑和阻力线的
+        openPrices = [x['Open'] for x in data]
+        sr = self.m.support_and_resistance(openPrices, closePrices)
+        sr_price = sr['price']
+        lower_bound = cur_price * 0.95
+        count = 0
+        for p in range(len(sr_price)):
+            if sr_price[p] > lower_bound:
+                count += 1
+        if count < 2:
             return False
 
         rsi = self.m.rsi(closePrices)

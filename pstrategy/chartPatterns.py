@@ -64,9 +64,7 @@ class ChartPatterns:
     def signal_new_high(self, sym):
         name = '新高'
         try:
-            closePrices = [x['Close'] for x in self.datasets[sym]]
-            highs = [x['High'] for x in self.datasets[sym]]
-            if PriceSignals().New_High(closePrices, highs):
+            if PriceSignals().New_High(self.datasets[sym]):
                 self.wpool.lock()
                 if name not in self.all_rule_results.keys():
                     self.all_rule_results[name] = [sym]

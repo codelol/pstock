@@ -13,4 +13,14 @@ class TestPriceSignals(TestCase):
         lows = [e['Low'] for e in sdata]
         highs = [e['High'] for e in sdata]
         ret = PriceSignals().Bottom_Up(openPrices, closePrices, lows, highs)
-        assert(ret == True)
+        assert (ret == True)
+
+
+class TestPriceSignals(TestCase):
+    def test_New_High(self):
+        sym = 'PCG'
+        date = '2016-06-02'
+        data, missing = USMarket([sym], date).getData()
+        sdata = data[sym]
+        ret = PriceSignals().New_High(sdata)
+        assert (ret == True)
