@@ -203,6 +203,13 @@ class PriceSignals:
         if max(rsi[:5]) > 70:
             return False
 
+        macd_all = self.m.macd_all(closePrices)
+        macd_fast = macd_all['fast']
+        sr_idx = sr['idx']
+        if macd_fast[0] < macd_fast[sr_idx[0]]:
+            #这是MACD背离
+            return False
+
         return True
 
     #这个版本是: "整数新高"
