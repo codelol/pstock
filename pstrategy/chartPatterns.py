@@ -13,9 +13,8 @@ class ChartPatterns:
     # Type1_buy_point_MACD_bullish_divergence
     def signal_Type1_buy_point(self, sym):
         name = '一类买点'
-        closePrices = [float(x['Close']) for x in self.datasets[sym]]
         try:
-            if PriceSignals().Type1_buy_point_MACD_bullish_divergence(closePrices):
+            if PriceSignals().Type1_buy_point_MACD_bullish_divergence(self.datasets[sym]):
                 self.wpool.lock()
                 if name not in self.all_rule_results.keys():
                     self.all_rule_results[name] = [sym]

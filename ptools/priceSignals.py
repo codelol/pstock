@@ -5,12 +5,14 @@ closePrices[0] is the most recent price
 """
 
 from ptools import Metrics
+import numpy
 
 class PriceSignals:
     def __init__(self):
         self.m = Metrics()
 
-    def Type1_buy_point_MACD_bullish_divergence(self, closePrices):
+    def Type1_buy_point_MACD_bullish_divergence(self, data):
+        closePrices = [float(x['Close']) for x in data]
         macd_all = self.m.macd_all(closePrices)
         if macd_all == None:
             return False
@@ -23,32 +25,41 @@ class PriceSignals:
         if macd_histo[0] < macd_histo[1]:
             return False
 
-        # MACD底部背离已经出现:
-        # 底部背离：依次出现金叉，死叉，金叉。虽然这些叉出现时的价格越来越低，但是对应的macd_fast值越来越高
-        # 按照第一类买点的定律，出现第二个金叉时，已经错过了最低买点，所以要求是:
-        # 最近一次出现了金叉，死叉，当前
-        pos = 0
-        while pos < len(closePrices) and macd_histo[pos]<0:
-            pos += 1
-        if pos == len(closePrices):
-            return False
-        dead_cross = pos
+        #现在判断是否有"下跌-调整-下跌":
+        openPrices = [x['Open'] for x in data]
+        sr = self.m.support_and_resistance(openPrices, closePrices, 20)
+        sr_price = sr['price']
+        lower_bound = min(sr_price[0], sr_price[1]) * 0.95
+        upper_bound = max(sr_price[0], sr_price[1]) * 1.05
 
-        pos += 1
-        while pos < len(closePrices) and macd_histo[pos]>0:
-            pos += 1
-        if pos == len(closePrices):
+        if closePrices[0] > lower_bound:
             return False
-        gold_cross = pos
 
-        """
-        print(str([0, dead_cross, gold_cross]))
-        print(str([closePrices[0], closePrices[dead_cross], closePrices[gold_cross]]))
-        print(str([macd_fast[0], macd_fast[dead_cross], macd_fast[gold_cross]]))
-        """
-        #价格更低，但是macd没有更低，这就是一种背离
-        if not (closePrices[0] < closePrices[gold_cross] and\
-                macd_fast[0] > macd_fast[gold_cross]):
+        idx = 2
+        while idx < len(sr_price):
+            if sr_price[idx] < lower_bound:
+                return False
+            if sr_price[idx] > upper_bound:
+                break
+            idx += 1
+        if idx == len(sr_price) or sr_price[idx] < lower_bound:
+            return False
+        sr_idx = sr['idx']
+
+        #phase1 is the first 'down' phase
+        phase1_right_idx = sr_idx[idx-1]
+        phase1_left_idx = sr_idx[idx]
+        phase1_min_idx = numpy.argmin(closePrices[phase1_right_idx: phase1_left_idx])
+
+        #phase3 is the second (last) 'down' phase
+        phase3_right_idx = 0
+        phase3_left_idx = sr_idx[0]
+        phase3_min_idx = numpy.argmin(closePrices[phase3_right_idx:  phase3_left_idx])
+
+        # price should be new low but macd_fast should not
+        if closePrices[phase3_min_idx] > closePrices[phase1_min_idx]:
+            return False
+        if macd_fast[phase3_min_idx] < macd_fast[phase1_min_idx]:
             return False
 
         return True
