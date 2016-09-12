@@ -130,6 +130,50 @@ class PriceSignals:
 
         return True
 
+    #MACD底部背驰
+    def MACD_Bottom_reversal(self, closePrices):
+        macd_all = self.m.macd_all(closePrices)
+        if macd_all == None:
+            return False
+
+        macd_fast = macd_all['fast']
+        macd_slow = macd_all['slow']
+        macd_histo = macd_all['histo']
+        if max(macd_slow[0], macd_fast[0], macd_histo[0]) > 0:
+            return False
+        if macd_histo[0] < macd_histo[1]:
+            return False
+
+        # MACD底部背离已经出现:
+        # 底部背离：依次出现金叉，死叉，金叉。虽然这些叉出现时的价格越来越低，但是对应的macd_fast值越来越高
+        # 按照第一类买点的定律，出现第二个金叉时，已经错过了最低买点，所以要求是:
+        # 最近一次出现了金叉，死叉，当前
+        pos = 0
+        while pos < len(closePrices) and macd_histo[pos]<0:
+            pos += 1
+        if pos == len(closePrices):
+            return False
+        dead_cross = pos
+
+        pos += 1
+        while pos < len(closePrices) and macd_histo[pos]>0:
+            pos += 1
+        if pos == len(closePrices):
+            return False
+        gold_cross = pos
+
+        """
+        print(str([0, dead_cross, gold_cross]))
+        print(str([closePrices[0], closePrices[dead_cross], closePrices[gold_cross]]))
+        print(str([macd_fast[0], macd_fast[dead_cross], macd_fast[gold_cross]]))
+        """
+        #价格更低，但是macd没有更低，这就是一种背离
+        if not (closePrices[0] < closePrices[gold_cross] and\
+                macd_fast[0] > macd_fast[gold_cross]):
+            return False
+
+        return True
+
     #Note that the 'Open' data of the current day is not reliable, so let's not depend on it
     def Bottom_Up(self, openPrices, closePrices, lows, highs):
         #previous bar must be a nagative bar

@@ -41,6 +41,22 @@ class ChartPatterns:
             if sym not in self.missing_analysis:
                 self.missing_analysis.append(sym)
 
+
+    def signal_MACD_bottom_reversal(self, sym):
+        name = 'MACD底部背驰'
+        closePrices = [float(x['Close']) for x in self.datasets[sym]]
+        try:
+            if PriceSignals().MACD_Bottom_reversal(closePrices):
+                self.wpool.lock()
+                if name not in self.all_rule_results.keys():
+                    self.all_rule_results[name] = [sym]
+                else:
+                    self.all_rule_results[name].append(sym)
+                self.wpool.unlock()
+        except:
+            if sym not in self.missing_analysis:
+                self.missing_analysis.append(sym)
+
     def singal_bottom_up(self, sym):
         #插入线，待入线，切入线, 包线
         name = '反弹'
@@ -77,8 +93,9 @@ class ChartPatterns:
     def run_rules_for_sym(self, sym):
         rules = [self.signal_Type1_buy_point,
                  self.signal_Type2_buy_point,
-                 self.singal_bottom_up,
-                 self.signal_new_high]
+                 self.signal_MACD_bottom_reversal,
+                 self.signal_new_high,
+                 self.singal_bottom_up]
         for rule in rules:
             rule(sym)
 
@@ -92,7 +109,7 @@ class ChartPatterns:
         wpool.wait_for_all()
 
         # rulenames = ['一类买点', '二类买点', '反弹', '新高']
-        rulenames = ['一类买点', '反弹', '新高']
+        rulenames = ['一类买点', 'MACD底部背驰', '新高', '反弹']
         rules_with_results = [r for r in rulenames if r in self.all_rule_results.keys()]
         for name in rules_with_results:
             symbolStr = ' '.join(self.all_rule_results[name])
