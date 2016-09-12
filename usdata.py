@@ -261,9 +261,9 @@ class USMarket:
 
             # remove the most recent week of data in case user points to a day in the middle of the week
             # calculate_most_recent_weekly will take of the most recent partial week
-            most_recent_monday = get_monday_of_the_week(max(self.datasets_weekly[sym].keys()))
-            assert(most_recent_monday in self.datasets_weekly[sym].keys());
-            del self.datasets_weekly[sym][most_recent_monday]
+            most_recent_week_start = max(self.datasets_weekly[sym].keys())
+            assert(most_recent_week_start in self.datasets_weekly[sym].keys());
+            del self.datasets_weekly[sym][most_recent_week_start]
 
             self.calculate_most_recent_weekly(sym)
         except:
