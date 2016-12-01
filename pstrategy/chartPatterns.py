@@ -294,115 +294,104 @@ class ChartPatterns:
         self.datasets = datasets
 
     # Type1_buy_point_MACD_bullish_divergence
-    def signal_Type1_buy_point(self, sym):
+    def signal_Type1_buy_point(self, symbols):
         name = '一类买点'
-        try:
-            if PriceSignals().Type1_buy_point_MACD_bullish_divergence(self.datasets[sym]):
-                self.wpool.lock()
-                if name not in self.all_rule_results.keys():
-                    self.all_rule_results[name] = [sym]
-                else:
-                    self.all_rule_results[name].append(sym)
-                self.wpool.unlock()
-        except:
-            if sym not in self.missing_analysis:
-                self.missing_analysis.append(sym)
+        result = []
+        for sym in symbols:
+            try:
+                if PriceSignals().Type1_buy_point_MACD_bullish_divergence(self.datasets[sym]):
+                    result.append(sym)
+            except:
+                if sym not in self.missing_analysis:
+                    self.missing_analysis.append(sym)
+        return {'name':name, 'result':result}
 
     # Type2_buy_point_pullback_after_breakthrough
-    def signal_Type2_buy_point(self, sym):
+    def signal_Type2_buy_point(self, symbols):
         name = '二类买点'
-        closePrices = [float(x['Close']) for x in self.datasets[sym]]
-        try:
-            if PriceSignals().Type2_buy_point_pullback_after_breakthrough(closePrices):
-                self.wpool.lock()
-                if name not in self.all_rule_results.keys():
-                    self.all_rule_results[name] = [sym]
-                else:
-                    self.all_rule_results[name].append(sym)
-                self.wpool.unlock()
-        except:
-            if sym not in self.missing_analysis:
-                self.missing_analysis.append(sym)
+        result = []
+        for sym in symbols:
+            closePrices = [float(x['Close']) for x in self.datasets[sym]]
+            try:
+                if PriceSignals().Type2_buy_point_pullback_after_breakthrough(closePrices):
+                    result.append(sym)
+            except:
+                if sym not in self.missing_analysis:
+                    self.missing_analysis.append(sym)
+        return {'name':name, 'result':result}
 
 
-    def signal_MACD_bottom_reversal(self, sym):
+    def signal_MACD_bottom_reversal(self, symbols):
         name = 'MACD底部背驰'
-        closePrices = [float(x['Close']) for x in self.datasets[sym]]
-        try:
-            if PriceSignals().MACD_Bottom_reversal(closePrices):
-                self.wpool.lock()
-                if name not in self.all_rule_results.keys():
-                    self.all_rule_results[name] = [sym]
-                else:
-                    self.all_rule_results[name].append(sym)
-                self.wpool.unlock()
-        except:
-            if sym not in self.missing_analysis:
-                self.missing_analysis.append(sym)
+        result = []
+        for sym in symbols:
+            closePrices = [float(x['Close']) for x in self.datasets[sym]]
+            try:
+                if PriceSignals().MACD_Bottom_reversal(closePrices):
+                    result.append(sym)
+            except:
+                if sym not in self.missing_analysis:
+                    self.missing_analysis.append(sym)
+        return {'name':name, 'result':result}
 
-    def singal_bottom_up(self, sym):
+    def singal_bottom_up(self, symbols):
         #插入线，待入线，切入线, 包线
         name = '反弹'
-        try:
-            openPrices = [x['Open'] for x in self.datasets[sym]]
-            closePrices = [x['Close'] for x in self.datasets[sym]]
-            lowPrices = [x['Low'] for x in self.datasets[sym]]
-            highPrices = [x['High'] for x in self.datasets[sym]]
-            if PriceSignals().Bottom_Up(openPrices, closePrices, lowPrices, highPrices):
-                self.wpool.lock()
-                if name not in self.all_rule_results.keys():
-                    self.all_rule_results[name] = [sym]
-                else:
-                    self.all_rule_results[name].append(sym)
-                self.wpool.unlock()
-        except:
-            if sym not in self.missing_analysis:
-                self.missing_analysis.append(sym)
+        result = []
+        for sym in symbols:
+            try:
+                openPrices = [x['Open'] for x in self.datasets[sym]]
+                closePrices = [x['Close'] for x in self.datasets[sym]]
+                lowPrices = [x['Low'] for x in self.datasets[sym]]
+                highPrices = [x['High'] for x in self.datasets[sym]]
+                if PriceSignals().Bottom_Up(openPrices, closePrices, lowPrices, highPrices):
+                    result.append(sym)
+            except:
+                if sym not in self.missing_analysis:
+                    self.missing_analysis.append(sym)
+        return {'name':name, 'result':result}
 
-    def signal_new_high(self, sym):
+    def signal_new_high(self, symbols):
         name = '新高'
-        try:
-            if PriceSignals().New_High(self.datasets[sym]):
-                self.wpool.lock()
-                if name not in self.all_rule_results.keys():
-                    self.all_rule_results[name] = [sym]
-                else:
-                    self.all_rule_results[name].append(sym)
-                self.wpool.unlock()
-        except:
-            if sym not in self.missing_analysis:
-                self.missing_analysis.append(sym)
+        result = []
+        for sym in symbols:
+            try:
+                if PriceSignals().New_High(self.datasets[sym]):
+                    result.append(sym)
+            except:
+                if sym not in self.missing_analysis:
+                    self.missing_analysis.append(sym)
+        return {'name':name, 'result':result}
 
-    def run_rules_for_sym(self, sym):
+    def run_rule(self, rule, symbols):
+        ret = rule(symbols)
+        self.wpool.lock()
+        self.all_rule_results.append(ret)
+        self.wpool.unlock()
+
+    def run(self):
+        self.all_rule_results = []
+
         rules = [self.signal_Type1_buy_point,
-                 self.signal_Type2_buy_point,
+                 # self.signal_Type2_buy_point,
                  self.signal_MACD_bottom_reversal,
                  self.signal_new_high,
                  self.singal_bottom_up]
-        for rule in rules:
-            rule(sym)
-
-    def run(self):
-        self.all_rule_results = {}
 
         wpool = WorkPool(10)
         self.wpool = wpool
-        for sym in self.symbols:
-            wpool.start_work(self.run_rules_for_sym, sym)
+        for rule in rules:
+            wpool.start_work_arg2(self.run_rule, rule, self.symbols)
         wpool.wait_for_all()
 
-        # rulenames = ['一类买点', '二类买点', '反弹', '新高']
-        rulenames = ['一类买点', 'MACD底部背驰', '新高', '反弹']
-        rules_with_results = [r for r in rulenames if r in self.all_rule_results.keys()]
-        for name in rules_with_results:
-            symbolStr = ' '.join(self.all_rule_results[name])
-            print(name + ': '+ symbolStr)
+        for result in self.all_rule_results:
+            print(result['name'] + ': '+ ' '.join(result['result']))
 
         if len(self.missing_data) > 0:
-            print('missing data: ' + str(self.missing_data))
+            print('missing data: ' + ' '.join(self.missing_data))
 
         if len(self.missing_analysis) > 0:
-            print('skipped symbols: ' + str(self.missing_analysis))
+            print('skipped symbols: ' + ' '.join(self.missing_analysis))
 
 
 def main() :
