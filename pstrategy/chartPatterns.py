@@ -2,6 +2,15 @@ from ptools import Metrics, WorkPool
 from usdata import USMarket
 import numpy
 
+def window(center, size) :
+    lower = center - min(center, int(size / 2))
+    upper = lower + size #upper should be exclusive
+    return lower, upper
+
+def arrayWindow(array, center, size) :
+    lower, upper = window(center, size)
+    return array[lower:upper]
+
 class PriceSignals:
     def __init__(self):
         self.m = Metrics()
@@ -126,7 +135,7 @@ class PriceSignals:
         return True
 
     #MACD底部背驰
-    def MACD_Bottom_reversal(self, closePrices):
+    def MACD_Bottom_reversal2(self, closePrices):
         macd_all = self.m.macd_all(closePrices)
         if macd_all == None:
             return False
@@ -134,37 +143,46 @@ class PriceSignals:
         macd_fast = macd_all['fast']
         macd_slow = macd_all['slow']
         macd_histo = macd_all['histo']
-        if max(macd_slow[0], macd_fast[0], macd_histo[0]) > 0:
+        if max(macd_slow[0], macd_fast[0]) > 0:
             return False
         if macd_histo[0] < macd_histo[1]:
             return False
 
-        # MACD底部背离已经出现:
-        # 底部背离：依次出现金叉，死叉，金叉。虽然这些叉出现时的价格越来越低，但是对应的macd_fast值越来越高
-        # 按照第一类买点的定律，出现第二个金叉时，已经错过了最低买点，所以要求是:
-        # 最近一次出现了金叉，死叉，当前
-        pos = 0
-        while pos < len(closePrices) and macd_histo[pos]<0:
-            pos += 1
-        if pos == len(closePrices):
+        #find gold crosses
+        gold_crosses = []
+        required = 2
+        for idx in range(len(macd_histo) - 1):
+            # if there is a dead cross before the first gold cross, False
+            if len(gold_crosses) == 0 and \
+                    (macd_histo[idx] < 0 and macd_histo[idx+1] >= 0):
+                return False
+            if macd_histo[idx] > 0 and macd_histo[idx+1] <= 0:
+                curLen = len(gold_crosses)
+                if curLen > 0 and idx - gold_crosses[curLen-1] < 7:
+                    continue # gold crosses are too close, just noise, ignore
+                gold_crosses.append(idx)
+                if len(gold_crosses) == required:
+                    break
+        if len(gold_crosses) < required:
             return False
-        dead_cross = pos
 
-        pos += 1
-        while pos < len(closePrices) and macd_histo[pos]>0:
-            pos += 1
-        if pos == len(closePrices):
+        # Am I coming late?
+        # reversal coming a long time after previous gold cross? yes -> must be weak
+        if gold_crosses[0] > 20 or\
+           gold_crosses[1] - gold_crosses[0] > 55:
             return False
-        gold_cross = pos
 
-        """
-        print(str([0, dead_cross, gold_cross]))
-        print(str([closePrices[0], closePrices[dead_cross], closePrices[gold_cross]]))
-        print(str([macd_fast[0], macd_fast[dead_cross], macd_fast[gold_cross]]))
-        """
-        #价格更低，但是macd没有更低，这就是一种背离
-        if not (closePrices[0] < closePrices[gold_cross] and\
-                macd_fast[0] > macd_fast[gold_cross]):
+        fcrossed = [macd_fast[x] for x in gold_crosses]
+        assert(len(fcrossed) > 1)
+        # if 'gold' cross is made with lower macd values, not good
+        if fcrossed[0] < fcrossed[1]:
+            return False
+
+        # gprices = [closePrices[x] for x in gold_crosses]
+        gprices = [min(arrayWindow(closePrices, x, 14)) for x in gold_crosses]
+        assert(len(gprices) > 1)
+        # if price is moving higher while gold crosses move higher, no reversal
+        if gprices[0] > gprices[1]:
             return False
 
         return True
@@ -327,7 +345,7 @@ class ChartPatterns:
         for sym in symbols:
             closePrices = [float(x['Close']) for x in self.datasets[sym]]
             try:
-                if PriceSignals().MACD_Bottom_reversal(closePrices):
+                if PriceSignals().MACD_Bottom_reversal2(closePrices):
                     result.append(sym)
             except:
                 if sym not in self.missing_analysis:
@@ -372,11 +390,13 @@ class ChartPatterns:
     def run(self):
         self.all_rule_results = []
 
-        rules = [self.signal_Type1_buy_point,
-                 # self.signal_Type2_buy_point,
+        rules = [
                  self.signal_MACD_bottom_reversal,
-                 self.signal_new_high,
-                 self.singal_bottom_up]
+                 ]
+        # self.signal_Type2_buy_point,
+        # self.signal_new_high,
+        # self.singal_bottom_up
+        # self.signal_Type1_buy_point,
 
         wpool = WorkPool(10)
         self.wpool = wpool
