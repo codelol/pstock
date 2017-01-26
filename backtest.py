@@ -2,6 +2,7 @@
 
 import argparse
 from usdata import USMarket
+from tabulate import tabulate
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='test gains/loss for each given symbol')
@@ -30,6 +31,8 @@ def backtester(symbols, buyDate, sellUntil) :
         skipped.append(m)
 
     result = []
+    win = 0
+    loss = 0
     for sym in symbols:
         sp = prices[sym]
 
@@ -40,13 +43,20 @@ def backtester(symbols, buyDate, sellUntil) :
 
         cost = sp[pos]['Close']
         sell_candidates = [sp[x]['Close'] for x in range(pos)]
-        sellPrice = max(sell_candidates)
-        gain = sellPrice - cost
+        sellPrice = max(sell_candidates) #suppose we can sell at the highest price within this period
+        if sellPrice > cost :
+            win += 1
+        else :
+            loss += 1
+        gain = (sellPrice - cost) / cost * 100 #will be used as percentage
         result.append((sym, gain, cost, sellPrice))
 
-    priceSorted = sorted(result, key=lambda tup: tup[1])
-    for res in priceSorted:
-        print(str(res))
+    gainSorted = sorted(result, key=lambda tup: float(tup[1]), reverse=True)
+    printResults(gainSorted, ["Symbol", "%Gain", "Cost", "SellPrice"])
+    print('Win: ' + str(win) +'; Loss: '+ str(loss) + '; Win rate: %.2f' % round(win/(win+loss), 2))
+
+def printResults(result, colNames) :
+    print(tabulate(result, colNames, floatfmt=".2f"))
 
 if __name__ == '__main__':
     main()
