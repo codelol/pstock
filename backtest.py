@@ -33,6 +33,8 @@ def backtester(symbols, buyDate, sellUntil) :
     result = []
     win = 0
     loss = 0
+    worstCaseWin = 0
+    worstCaseLoss = 0
     for sym in symbols:
         sp = prices[sym]
 
@@ -43,17 +45,28 @@ def backtester(symbols, buyDate, sellUntil) :
 
         cost = sp[pos]['Close']
         sell_candidates = [sp[x]['Close'] for x in range(pos)]
+
         sellPrice = max(sell_candidates) #suppose we can sell at the highest price within this period
         if sellPrice > cost :
             win += 1
         else :
             loss += 1
+
+        lowestPrice = min(sell_candidates)
+        if lowestPrice > cost:
+            worstCaseWin += 1
+        else :
+            worstCaseLoss += 1
+
         gain = (sellPrice - cost) / cost * 100 #will be used as percentage
-        result.append((sym, gain, cost, sellPrice))
+        worstCase = (lowestPrice - cost) / cost * 100
+        result.append((sym, gain, cost, sellPrice, worstCase))
 
     gainSorted = sorted(result, key=lambda tup: float(tup[1]), reverse=True)
-    printResults(gainSorted, ["Symbol", "%Gain", "Cost", "SellPrice"])
-    print('Win: ' + str(win) +'; Loss: '+ str(loss) + '; Win rate: %.2f' % round(win/(win+loss), 2))
+    printResults(gainSorted, ["Symbol", "%Gain", "Cost", "SellPrice", "%WorstCase"])
+    print('BestCase  => Win: ' + str(win) +'; Loss: '+ str(loss) + '; Win rate: %.2f' % round(win/(win+loss), 2))
+    print('WorstCase => Win: ' + str(worstCaseWin) +'; Loss: '+ str(worstCaseLoss) + \
+          '; Win rate: %.2f' % round(worstCaseWin/(worstCaseWin+worstCaseLoss), 2))
 
 def printResults(result, colNames) :
     print(tabulate(result, colNames, floatfmt=".2f"))
