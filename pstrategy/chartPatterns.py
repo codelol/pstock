@@ -343,6 +343,9 @@ class ChartPatterns:
         name = 'MACD底部背驰'
         result = []
         for sym in symbols:
+            volumes = [float(x['Volume']) for x in self.datasets[sym]]
+            if max(volumes[:10]) < 500000: #skip whose volume is less than 500K
+                continue
             closePrices = [float(x['Close']) for x in self.datasets[sym]]
             try:
                 if PriceSignals().MACD_Bottom_reversal2(closePrices):
