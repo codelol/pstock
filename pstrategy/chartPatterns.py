@@ -394,12 +394,12 @@ class ChartPatterns:
         self.all_rule_results = []
 
         rules = [
+                 self.signal_Type1_buy_point,
                  self.signal_MACD_bottom_reversal,
                  ]
         # self.signal_Type2_buy_point,
         # self.signal_new_high,
         # self.singal_bottom_up
-        # self.signal_Type1_buy_point,
 
         wpool = WorkPool(10)
         self.wpool = wpool
