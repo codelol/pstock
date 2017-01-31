@@ -14,8 +14,6 @@ def arg_parser():
     args = parser.parse_args()
     return args;
 
-billion = float(1000 * 1000 * 1000)
-
 def main():
     args = arg_parser()
     fnames = args.filename
@@ -30,10 +28,19 @@ def main():
         with open(f) as csvfile:
             reader = csv.DictReader(csvfile)
             for datapoint in reader:
-                marketCap = float(datapoint['MarketCap'])
-                if marketCap < minMarketCap * billion:
+                mcstr = datapoint['MarketCap']
+                if mcstr == 'n/a':
                     continue
-                if maxMarketCap > 0 and marketCap > maxMarketCap * billion:
+                if mcstr[len(mcstr)-1] == 'B':
+                    mcstr = mcstr[:len(mcstr)-1]
+                elif mcstr[len(mcstr)-1] == 'M': #market cap is not at billion level, skip this one
+                    continue
+                if mcstr[0] == '$':
+                    mcstr = mcstr[1:]
+                marketCap = float(mcstr)
+                if marketCap < minMarketCap:
+                    continue
+                if maxMarketCap > 0 and marketCap > maxMarketCap:
                     continue
                 sym = datapoint['Symbol']
                 all_symbols.append(sym)
