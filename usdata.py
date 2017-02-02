@@ -26,8 +26,8 @@ foldername = 'datafiles-us'
 max_history_year=5 #if no history data exists, download the last 5 years of history
 
 # update this field periodically
-futureholidays = ['2016-07-04', '2016-09-05', '2016-11-24', '2016-12-25', '2016-12-26',
-                  '2017-01-01', '2017-01-16']
+holidays = ['2016-07-04', '2016-09-05', '2016-11-24', '2016-12-25', '2016-12-26',
+            '2017-01-01', '2017-01-16', '2017-02-20', '2017-04-14']
 
 def arg_parser():
     parser = argparse.ArgumentParser(description='pstock stock analysis tool in python')
@@ -70,7 +70,7 @@ def get_cur_time():
         cur_time = cur_time - timedelta(minutes = (minutes + 60))
     return cur_time
 
-def get_latest_trading_date(s = None):
+def get_latest_trading_date(s = None, backwardDelta = 0):
     if s == None:
         cur_time = get_cur_time()
     else:
@@ -83,10 +83,15 @@ def get_latest_trading_date(s = None):
             continue
 
         ts = '-'.join([str(cur_time.year), strWithZero(cur_time.month), strWithZero(cur_time.day)])
-        if ts in futureholidays:
+        if ts in holidays:
             cur_time = cur_time - timedelta(days = 1)
             continue
 
+        # now we found the closest trading day, but what we want is the next closest date,
+        # so go backward
+        if backwardDelta > 0:
+            cur_time = cur_time - timedelta(days = backwardDelta)
+            backwardDelta = 0
         break
     ret = '-'.join([str(cur_time.year), strWithZero(cur_time.month), strWithZero(cur_time.day)])
     return ret
@@ -177,6 +182,10 @@ class USMarket:
             ending = min(self.adjusted_endDate, latest_trading_date)
             if prev_history_ends < ending:
                 self.download_most_recent_daily(sym, prev_history_ends, ending)
+                mostRecentHistory = max(self.datasets_daily[sym].keys())
+                if mostRecentHistory < get_latest_trading_date(None, 1):
+                    raise Exception("missing history data for " + sym)
+
                 self.fetch_current_data(sym)
         except:
             if sym not in self.missing_daily:
