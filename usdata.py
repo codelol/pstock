@@ -167,6 +167,7 @@ class USMarket:
         ) if endDate != '9999-99-99' else '9999-99-99'
         self.datasets_daily = {}
         self.datasets_weekly = {}
+        self.missingRecentHistory = []
         self.missing_daily = []
         self.missing_weekly = []
         self.daily_data_updated = False
@@ -184,6 +185,8 @@ class USMarket:
                 self.download_most_recent_daily(sym, prev_history_ends, ending)
                 mostRecentHistory = max(self.datasets_daily[sym].keys())
                 if mostRecentHistory < get_latest_trading_date(None, 1):
+                    if sym not in self.missingRecentHistory:
+                        self.missingRecentHistory.append(sym)
                     raise Exception("missing history data for " + sym)
 
                 self.fetch_current_data(sym)
@@ -389,6 +392,9 @@ class USMarket:
         # [0] is the most recent price point
         for sym in list(set(self.watchlist) - set(missing)):
             sortedByDate[sym] = [dataset[sym][date] for date in sorted(dataset[sym].keys(), reverse=True) if date <= self.endDate]
+
+        if frequency == 'daily':
+            print('recent data not downloaded: ' + str(self.missingRecentHistory))
         return sortedByDate, missing
 
     def get_latest_history_date(self, sym, frequency='daily'):
