@@ -54,11 +54,11 @@ def main() :
         marketData = USMarket(watchlist)
 
 
-    print_progress('requesting daily data')
-    daily, missing1 = marketData.getData('daily')
-    print_progress('requesting weekly data')
-    weekly, missing2 = marketData.getData('weekly')
-    all_missing = set(missing1) | set(missing2)
+    # print_progress('requesting daily data')
+    daily, missing_daily = marketData.getData('daily')
+    # print_progress('requesting weekly data')
+    weekly, missing_weekly = marketData.getData('weekly')
+    all_missing = set(missing_daily) | set(missing_weekly)
     if len(all_missing) > 0:
         print('symbols missing data: ' + str(all_missing))
     symlist = [sym for sym in watchlist if sym not in all_missing]
@@ -71,29 +71,16 @@ def main() :
     cp_daily = ChartPatterns(symlist, daily)
     cp_daily.run()
 
-    print(' ----------- TripleScreen Screen (2 screens)---')
-    ts = TripleScreen(symlist, weekly, daily)
-    decision = ts.run()
-    longStr = shortStr = '(None)'
-    if decision['long'] != None and len(decision['long']) > 0:
-        longStr = ' '.join(decision['long'])
-    if decision['short'] != None and len(decision['short']) > 0:
-        shortStr = ' '.join(decision['short'])
-    print('long: '+ longStr)
-    print('short: '+ shortStr)
-
-    """
-    print(' ----------- TripleScreen Screen (1 screen)----')
-    ts = TripleScreen(symlist, weekly)
-    decision = ts.run()
-    longStr = shortStr = '(None)'
-    if decision['long'] != None and len(decision['long']) > 0:
-        longStr = ' '.join(decision['long'])
-    if decision['short'] != None and len(decision['short']) > 0:
-        shortStr = ' '.join(decision['short'])
-    print('long: '+ longStr)
-    print('short: '+ shortStr)
-    """
+    # print(' ----------- TripleScreen Screen (2 screens)---')
+    # ts = TripleScreen(symlist, weekly, daily)
+    # decision = ts.run()
+    # longStr = shortStr = '(None)'
+    # if decision['long'] != None and len(decision['long']) > 0:
+    #     longStr = ' '.join(decision['long'])
+    # if decision['short'] != None and len(decision['short']) > 0:
+    #     shortStr = ' '.join(decision['short'])
+    # print('long: '+ longStr)
+    # print('short: '+ shortStr)
 
 if __name__ == '__main__' :
     # test()
