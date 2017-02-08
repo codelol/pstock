@@ -393,7 +393,7 @@ class USMarket:
         for sym in list(set(self.watchlist) - set(missing)):
             sortedByDate[sym] = [dataset[sym][date] for date in sorted(dataset[sym].keys(), reverse=True) if date <= self.endDate]
 
-        if frequency == 'daily':
+        if frequency == 'daily' and len(self.missingRecentHistory) > 0:
             print('recent data not downloaded: ' + str(self.missingRecentHistory))
         return sortedByDate, missing
 

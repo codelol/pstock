@@ -344,6 +344,8 @@ class ChartPatterns:
 
     def run_rule(self, rule, symbols):
         ret = rule(symbols)
+        if len(ret['result']) == 0:
+            return
         self.wpool.lock()
         self.all_rule_results.append(ret)
         self.wpool.unlock()
