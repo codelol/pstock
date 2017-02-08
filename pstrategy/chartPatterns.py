@@ -235,72 +235,30 @@ class PriceSignals:
         return True
 
     def New_High(self, data):
+        if len(data) < 100:
+            return False
+        cutoff = 7
+        maxhistory = 80
         closePrices = [x['Close'] for x in data]
-        highs = [x['High'] for x in data]
-        if len(closePrices) < 20:
-            return False
-        prev_high = max(highs[1:])
-        cur_price = closePrices[0]
-        #print(str([cur_price, prev_high]))
-        if cur_price < prev_high:
-            return False
+        recentMaxClose = max(closePrices[:cutoff])
 
-        ema_5 = self.m.ema(closePrices, 5)
-        ema_10 = self.m.ema(closePrices, 10)
+        previousHigh = max([x['High'] for x in data][cutoff:maxhistory])
+        previousLow = min([x['Low'] for x in data][cutoff:maxhistory])
 
-        # if price increased fast, skip
-        limit = 1.02
-        if (cur_price > min(ema_5[0], closePrices[1]) * limit) or\
-           (ema_5[0] > ema_10[0] * limit):
+        if previousHigh > recentMaxClose:
             return False
 
-        #用支撑线阻力线的位置来判断,价格是否在某区间徘徊
-        #如果价格一路上升,是不会有支撑和阻力线的
-        openPrices = [x['Open'] for x in data]
-        sr = self.m.support_and_resistance(openPrices, closePrices)
-        sr_price = sr['price']
-        lower_bound = cur_price * 0.95
-        count = 0
-        for p in range(len(sr_price)):
-            if sr_price[p] > lower_bound:
-                count += 1
-        if count < 2:
+        if previousLow < recentMaxClose * 0.9:
             return False
 
-        rsi = self.m.rsi(closePrices)
-        if max(rsi[:5]) > 70:
-            return False
+        ema5 = self.m.ema(closePrices, 5)
+        ema10 = self.m.ema(closePrices, 10)
+        ema20 = self.m.ema(closePrices, 20)
 
-        macd_all = self.m.macd_all(closePrices)
-        macd_fast = macd_all['fast']
-        sr_idx = sr['idx']
-        if macd_fast[0] < macd_fast[sr_idx[0]]:
-            #这是MACD背离
-            return False
+        if ema5[0] > ema10[0] and ema10[0] > ema20[0]:
+            return True
 
-        return True
-
-    #这个版本是: "整数新高"
-    def New_High_Old(self, closePrices, highs):
-        if len(closePrices) < 20:
-            return False
-        prev_high = max(highs[1:])
-        cur_price = closePrices[0]
-        if cur_price < prev_high:
-            return False
-
-        cur_price *= 1.02 #if cur_price is 2% short, print it too, so I can watch it
-        if cur_price < 10:
-            price_threshold = 1
-        elif cur_price < 100:
-            price_threshold = 10
-        else:
-            price_threshold = 100
-
-        if int(closePrices[0] / price_threshold) == int(prev_high / price_threshold):
-            return False
-
-        return True
+        return False
 
 class ChartPatterns:
     def __init__(self, watchlist, datasets):
@@ -396,9 +354,9 @@ class ChartPatterns:
         rules = [
                  self.signal_Type1_buy_point,
                  self.signal_MACD_bottom_reversal,
+                 self.signal_new_high,
                  ]
         # self.signal_Type2_buy_point,
-        # self.signal_new_high,
         # self.singal_bottom_up
 
         wpool = WorkPool(10)
