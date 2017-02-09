@@ -11,6 +11,16 @@ def arrayWindow(array, center, size) :
     lower, upper = window(center, size)
     return array[lower:upper]
 
+def count_crosses(a, b):
+    assert(len(a) == len(b))
+    assert(len(a) > 0)
+    size = len(a)
+    counts = []
+    for i in range(size - 1):
+        if (a[i] - b[i]) * (a[i+1] - b[i+1]) < 0:
+            counts.append(i)
+    return counts
+
 class PriceSignals:
     def __init__(self):
         self.m = Metrics()
@@ -251,14 +261,25 @@ class PriceSignals:
         if previousLow < recentMaxClose * 0.9:
             return False
 
-        ema5 = self.m.ema(closePrices, 5)
-        ema10 = self.m.ema(closePrices, 10)
-        ema20 = self.m.ema(closePrices, 20)
+        ma5 = self.m.sma(closePrices, 5)[:100]
+        ma10 = self.m.sma(closePrices, 10)[:100]
+        ma20 = self.m.sma(closePrices, 20)[:100]
 
-        if ema5[0] > ema10[0] and ema10[0] > ema20[0]:
-            return True
+        if ma5[0] < ma10[0]:
+            return False
 
-        return False
+        ma_crosses5_10 = count_crosses(ma5, ma10)
+        if len(ma_crosses5_10) < 3 or \
+            ma_crosses5_10[0] > 7: #too late
+            return False
+
+        ma_crosses10_20 = count_crosses(ma10, ma20)
+        if len(ma_crosses10_20) == 0 or \
+            ma_crosses10_20[0] > 30 : #too late
+            return False
+
+
+        return True
 
 class ChartPatterns:
     def __init__(self, watchlist, datasets):
