@@ -356,6 +356,9 @@ class ChartPatterns:
         result = []
         for sym in symbols:
             try:
+                volumes = [float(x['Volume']) for x in self.datasets[sym]]
+                if max(volumes[:10]) < 500000: #skip whose volume is less than 500K
+                    continue
                 if PriceSignals().New_High(self.datasets[sym]):
                     result.append(sym)
             except:
