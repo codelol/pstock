@@ -160,7 +160,7 @@ def load_csv_from_files(prefix, endingDate = None):
 
 class USMarket:
     def __init__(self, watchlist, endDate = '9999-99-99'):
-        self.watchlist = watchlist
+        self.watchlist = sorted(watchlist)
         self.endDate = endDate
         self.adjusted_endDate = get_latest_trading_date(
             datetime.strptime(endDate, '%Y-%m-%d')
