@@ -250,15 +250,21 @@ class PriceSignals:
         cutoff = 7
         maxhistory = 80
         closePrices = [x['Close'] for x in data]
+        openPrices = [x['Open'] for x in data]
         recentMaxClose = max(closePrices[:cutoff])
 
         previousHigh = max([x['High'] for x in data][cutoff:maxhistory])
-        previousLow = min([x['Low'] for x in data][cutoff:maxhistory])
-
         if previousHigh > recentMaxClose:
             return False
 
-        if previousLow < recentMaxClose * 0.9:
+        sr = self.m.support_and_resistance(openPrices, closePrices)
+        sr_count_limit = 4
+        if len(sr['idx']) < sr_count_limit or sr['idx'][sr_count_limit-1] > maxhistory:
+            return False
+
+        sr_max = max([x for x in sr['price'][:sr_count_limit]])
+        sr_min = min([x for x in sr['price'][:sr_count_limit]])
+        if sr_min < sr_max * 0.9:
             return False
 
         ma5 = self.m.sma(closePrices, 5)[:100]
