@@ -247,7 +247,7 @@ class PriceSignals:
     def New_High(self, data):
         if len(data) < 100:
             return False
-        cutoff = 7
+        cutoff = 3
         maxhistory = 80
         closePrices = [x['Close'] for x in data]
         openPrices = [x['Open'] for x in data]
